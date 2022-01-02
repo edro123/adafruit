@@ -1,0 +1,47 @@
+Design goal: replace netatmo with better capability.
+Specifications:
+    Inputs and Outputs:
+        Controls:
+            Slider
+            Push buttons
+            Touch
+            adafruit dashboard
+        Data inputs:
+            What:
+                Internal sensors:
+                    [x] temperature
+                    [x] humidity
+                    [x] barometer
+                    [x] light level
+                Internal switches / controls
+                    ...
+                add on sensors:
+                    PIR
+                    VOC / CO2: 
+                        Adafruit SGP30 Air Quality Sensor Breakout - VOC and eCO2 - STEMMA QT / Qwiic
+                        https://www.adafruit.com/product/3709
+                adafruit IO
+                    Local Weather and forecast inputs
+                    ...
+        Data Outputs:
+            Internal TFT display
+                subset: ???
+            adafruit dashboard
+                all
+                    [x] temperature
+                    [x] humidity
+                    [x] barometer
+                    [x] light level
+                    ...                
+                [x] update 20 times / hour
+                [x] plot
+        Status Outputs:
+            Speaker / buzzer ???
+            Five mini DotStar LEDs ???
+            adafruit dashboard
+    Processing:
+        ???
+        Use PIR to activate TFT display. Set to off after delay
+        Use light sensor to control TFT brightness
+        Use individual DotStar LEDs to show status (GYR?)
+        Decide on power conservation: two modes?
