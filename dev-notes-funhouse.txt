@@ -1,4 +1,4 @@
-Design goal: replace netatmo with better capability.
+Design goal: replace netatmo with programmable, better capability.
 Specifications:
     Inputs and Outputs:
         Controls:
@@ -16,12 +16,12 @@ Specifications:
                 Internal switches / controls
                     ...
                 add on sensors:
-                    PIR
-                    VOC / CO2: 
+                    [] PIR
+                    [] VOC / CO2: 
                         Adafruit SGP30 Air Quality Sensor Breakout - VOC and eCO2 - STEMMA QT / Qwiic
                         https://www.adafruit.com/product/3709
                 adafruit IO
-                    Local Weather and forecast inputs
+                    Local Weather and forecast inputs???
                     ...
         Data Outputs:
             Internal TFT display
@@ -33,7 +33,7 @@ Specifications:
                     [x] barometer
                     [x] light level
                     ...                
-                [x] update 20 times / hour
+                [] update 20 times / hour??
                 [x] plot
         Status Outputs:
             Speaker / buzzer ???

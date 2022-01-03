@@ -14,15 +14,15 @@ funhouse = FunHouse(default_bg=None)
 
 DELAY = 180
 TEMPERATURE_OFFSET = (
-    -3  # Degrees C to adjust the temperature to compensate for board produced heat
+    -4  # Degrees C to adjust the temperature to compensate for board produced heat
 )
 
 PRESSURE_OFFSET = (
-    0  # mm Hg to adjustment to calibrate the pressure sensor
+    1  # mm Hg to adjustment to calibrate the pressure sensor
 )
 
 HUMIDITY_OFFSET = (
-    10  # mm Hg to adjustment to calibrate the humidity sensor
+    14  # mm Hg to adjustment to calibrate the humidity sensor
 )
 
 # Turn things off
@@ -31,22 +31,27 @@ funhouse.display.brightness = 0
 funhouse.network.enabled = False
 
 def log_data():
+    cal_temperature_F = ((funhouse.peripherals.temperature + TEMPERATURE_OFFSET) * 9 / 5 + 32)
+    cal_humidity = funhouse.peripherals.relative_humidity + HUMIDITY_OFFSET
+    cal_pressure = funhouse.peripherals.pressure + PRESSURE_OFFSET
+    funhouse.display.brightness = 0.5
     print("---------------------")
-    print("Temperature %0.1F" % (funhouse.peripherals.temperature + TEMPERATURE_OFFSET)*9 / 5 - 32)
-    print("Humidity %0.1F" % (funhouse.peripherals.relative_humidity + HUMIDITY_OFFSET))
-    print("Pressure %0.1F" % (funhouse.peripherals.pressure) + PRESSURE_OFFSET)
+    print("Temperature %0.1F" % (cal_temperature_F))
+    print("Humidity %0.1F" % (cal_humidity))
+    print("Pressure %0.1F" % (cal_pressure))
     print("Light %0.1F" % (funhouse.peripherals.light))
     # Turn on WiFi
     funhouse.network.enabled = True
     # Connect to WiFi
     funhouse.network.connect()
     # Push to IO using REST
-    funhouse.push_to_io("temperature", funhouse.peripherals.temperature - TEMPERATURE_OFFSET)
-    funhouse.push_to_io("humidity", funhouse.peripherals.relative_humidity)
-    funhouse.push_to_io("pressure", funhouse.peripherals.pressure)
+    funhouse.push_to_io("temperature", cal_temperature_F)
+    funhouse.push_to_io("humidity", cal_humidity)
+    funhouse.push_to_io("pressure", cal_pressure)
     funhouse.push_to_io("lightlevel", funhouse.peripherals.light)
     # Turn off WiFi
     funhouse.network.enabled = False
+    funhouse.display.brightness = 0
 
 
 while True:
