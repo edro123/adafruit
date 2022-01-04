@@ -50,25 +50,16 @@ Specifications:
 1/4/22
     The basics are working
     LED usage
-        To individually control dotstar LEDs like this (doesn't work?):
-            import time
-            import board
-            import adafruit_dotstar
-            dots = adafruit_dotstar.DotStar(board.DOTSTAR_CLOCK, board.DOTSTAR_DATA, 5)
-            dots.brightness = 0.1
-            dots[2]=((255, 0, 0))
-            time.sleep(0.5)
-            dots[2]=((0, 255, 0))
-            time.sleep(0.5)
-            dots[2]=((0, 0, 255))
-            time.sleep(0.5)
+        Individually control dotstar LEDs like this:
+            funhouse.peripherals.dotstars[2] = (16, 16, 16)
         Funhouse has six LEDs. Usage:
             [x] main LED: on when uploading: funhouse.peripherals.led = True
-            [n/a] barometer: no LED
-            [] CO2: dots[0] - color varies with level, blue - green - yellow - red
-            [] humidity: dots[1] - orange (low) green (OK) red (high)
-            [n/a] light level no LED
-            [] PIR: dots[2] - white. fades with time?
-            [] temperature: dots[3] - color varies with level, blue - green - yellow - red
-            [] VOC: dots[4] - color varies with level, blue - green - yellow - red
-        Hmm. get in use errors with dotstar LEDs. Because of the way Funhouse inits them???
+            Use dotstars in alpha order:
+                [n/a] barometer: no LED
+                [] dots[0] - CO2: color varies with level, blue - green - yellow - red
+                [] dots[1] - humidity: orange (low) - green (OK) - red (high)
+                [n/a] light level no LED
+                [x] dots[2] - PIR: white
+                    [] fades with time?
+                [] dots[3] - temperature: color varies with level, blue - green - yellow - red
+                [] dots[4] - VOC: color varies with level, blue - green - yellow - red

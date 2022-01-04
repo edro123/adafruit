@@ -16,7 +16,8 @@ funhouse = FunHouse(default_bg=None)
 
 DELAY = 180
 TEMPERATURE_OFFSET = (
-    -4  # Degrees C to adjust the temperature to compensate for board produced heat
+    -4  # Degrees F to adjust the temperature to compensate for board produced heat
+    # Access the cpu temp and model a dynamic offset?
 )
 
 PRESSURE_OFFSET = (
@@ -62,11 +63,13 @@ while True:
     if save_pir == 0 and funhouse.peripherals.pir_sensor:
         save_pir = 1
         print("PIR Motion detected!")
+        funhouse.peripherals.dotstars[2] = (16, 16, 16)
     slider = funhouse.peripherals.slider
     if slider is not None: funhouse.display.brightness = slider
     if time.time() - save_time > DELAY:
         log_data(save_pir)
         save_time = time.time()
         save_pir = 0
+        funhouse.peripherals.dotstars[2] = (0, 0, 0)
     else:
         funhouse.enter_light_sleep(0.5)
