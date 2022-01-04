@@ -2,10 +2,11 @@ Design goal: replace netatmo with programmable, better capability.
 Specifications:
     Inputs and Outputs:
         Controls:
-            Slider
-            Push buttons
-            Touch
-            adafruit dashboard
+            local:
+                [x] Slider: use to control TFT display brightness
+                3 Push buttons
+                3 Touch
+            Web adafruit dashboard: Don't really see a use case for web control of the funhouse
         Data inputs:
             What:
                 Internal sensors:
@@ -16,10 +17,11 @@ Specifications:
                 Internal switches / controls
                     ...
                 add on sensors:
-                    [] PIR
-                    [] VOC / CO2: 
-                        Adafruit SGP30 Air Quality Sensor Breakout - VOC and eCO2 - STEMMA QT / Qwiic
+                    [x] PIR
+                    Adafruit SGP30 Air Quality Sensor Breakout - VOC and eCO2 - STEMMA QT / Qwiic
                         https://www.adafruit.com/product/3709
+                    [] VOC 
+                    [] CO2:
                 adafruit IO
                     Local Weather and forecast inputs???
                     ...
@@ -41,7 +43,32 @@ Specifications:
             adafruit dashboard
     Processing:
         ???
-        Use PIR to activate TFT display. Set to off after delay
+        Use PIR to activate TFT display. Set to off after delay?
         Use light sensor to control TFT brightness
         Use individual DotStar LEDs to show status (GYR?)
         Decide on power conservation: two modes?
+1/4/22
+    The basics are working
+    LED usage
+        To individually control dotstar LEDs like this (doesn't work?):
+            import time
+            import board
+            import adafruit_dotstar
+            dots = adafruit_dotstar.DotStar(board.DOTSTAR_CLOCK, board.DOTSTAR_DATA, 5)
+            dots.brightness = 0.1
+            dots[2]=((255, 0, 0))
+            time.sleep(0.5)
+            dots[2]=((0, 255, 0))
+            time.sleep(0.5)
+            dots[2]=((0, 0, 255))
+            time.sleep(0.5)
+        Funhouse has six LEDs. Usage:
+            [x] main LED: on when uploading: funhouse.peripherals.led = True
+            [n/a] barometer: no LED
+            [] CO2: dots[0] - color varies with level, blue - green - yellow - red
+            [] humidity: dots[1] - orange (low) green (OK) red (high)
+            [n/a] light level no LED
+            [] PIR: dots[2] - white. fades with time?
+            [] temperature: dots[3] - color varies with level, blue - green - yellow - red
+            [] VOC: dots[4] - color varies with level, blue - green - yellow - red
+        Hmm. get in use errors with dotstar LEDs. Because of the way Funhouse inits them???
