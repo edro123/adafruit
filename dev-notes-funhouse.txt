@@ -6,7 +6,7 @@ Specifications:
                 [x] Slider: use to control TFT display brightness
                 3 Push buttons
                 3 Touch
-            Web adafruit dashboard: Don't really see a use case for web control of the funhouse
+            Web adafruit dashboard: Don't really see a use case for web remote control of the funhouse
         Data inputs:
             What:
                 Internal sensors:
@@ -14,39 +14,37 @@ Specifications:
                     [x] humidity
                     [x] barometer
                     [x] light level
-                Internal switches / controls
-                    ...
                 add on sensors:
                     [x] PIR
                     Adafruit SGP30 Air Quality Sensor Breakout - VOC and eCO2 - STEMMA QT / Qwiic
                         https://www.adafruit.com/product/3709
-                    [] VOC 
-                    [] CO2:
+                        [] VOC 
+                        [] CO2:
                 adafruit IO
-                    Local Weather and forecast inputs???
-                    ...
+                    [no] Local Weather and forecast inputs??? use pushbuttons for menu? select local weather? Why?
         Data Outputs:
-            Internal TFT display
-                subset: ???
+            [x] Print to Internal TFT display
             adafruit dashboard
-                all
-                    [x] temperature
-                    [x] humidity
-                    [x] barometer
-                    [x] light level
+                [x] temperature
+                [] cpu temp?
+                [x] humidity
+                [x] barometer
+                [x] light level
                     ...                
-                [] update 20 times / hour??
+                [] change update rate from 20 times / hour??
                 [x] plot
         Status Outputs:
             Speaker / buzzer ???
-            Five mini DotStar LEDs ???
-            adafruit dashboard
+            [x] Five mini DotStar LEDs
+            [x] adafruit dashboard
     Processing:
-        ???
-        Use PIR to activate TFT display. Set to off after delay?
-        Use light sensor to control TFT brightness
-        Use individual DotStar LEDs to show status (GYR?)
-        Decide on power conservation: two modes?
+        [no] Use PIR to activate TFT display. Set to off after delay?
+        [no] Use light sensor to control TFT brightness
+        [] Decide on power conservation: 
+            two modes? 
+            no worries unles battery powered
+            Use small power bank like with zoom H6?
+        [no] I/F with Raspberry Pis. Just display web page on Pi.
 1/4/22
     The basics are working
     LED usage
@@ -57,9 +55,36 @@ Specifications:
             Use dotstars in alpha order:
                 [n/a] barometer: no LED
                 [] dots[0] - CO2: color varies with level, blue - green - yellow - red
+
                 [] dots[1] - humidity: orange (low) - green (OK) - red (high)
                 [n/a] light level no LED
                 [x] dots[2] - PIR: white
                     [] fades with time?
                 [] dots[3] - temperature: color varies with level, blue - green - yellow - red
                 [] dots[4] - VOC: color varies with level, blue - green - yellow - red
+    libraries used so far:
+        adafruit_ahtx0.mpy		adafruit_io
+        adafruit_bitmap_font		adafruit_minimqtt
+        adafruit_display_text		adafruit_portalbase
+        adafruit_dotstar.mpy		adafruit_register
+        adafruit_dps310.mpy		adafruit_requests.mpy
+        adafruit_fakerequests.mpy	simpleio.mpy
+        adafruit_funhouse
+    disk space used so far: /dev/disk8s1  941Ki  302Ki  639Ki    33%     512     0  100%   /Volumes/CIRCUITPY
+    Next:
+        [x] Add a function for humidity and temperature LEDs
+        [] Code clean up
+            [] Consolodate constants
+            [] try except
+            [] test for or protect against non-existent sensors 
+        [] test sgp 30
+        [] add sgp 30 CO2 and VOC
+            [] read sensors
+            [] update LED colors based on measurements
+    Future:
+        Modes? 
+            nightlight - 
+            auto TFT / LED brightness
+            Away mode: immediate notification of motion detect to Raspberry Pi
+1/6/22
+    Code is ready for SGP 30 test / debug
