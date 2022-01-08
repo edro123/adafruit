@@ -74,17 +74,24 @@ Specifications:
     Next:
         [x] Add a function for humidity and temperature LEDs
         [] Code clean up
-            [] Consolodate constants
+            [x] Consolodate constants
             [] try except
             [] test for or protect against non-existent sensors 
         [] test sgp 30
         [] add sgp 30 CO2 and VOC
             [] read sensors
-            [] update LED colors based on measurements
+            [x] update LED colors based on measurements
     Future:
         Modes? 
-            nightlight - 
-            auto TFT / LED brightness
-            Away mode: immediate notification of motion detect to Raspberry Pi
+            [x] nightlight???
+                on motion detect:
+                    turn on led[2] for one cycle
+                    if it's dark and brightness is zero: turn all dotstar LEDs on full bright for one cycle
+            [x] auto TFT / LED brightness
+            Away mode:
+                immediate notification of motion detect to Raspberry Pi
+                slow email notification via IFTT
+        [x] add cpu temperature: https://learn.adafruit.com/adafruit-funhouse/cpu-temperature
 1/6/22
     Code is ready for SGP 30 test / debug
+    [] Can LED brightness control be re-factored?
