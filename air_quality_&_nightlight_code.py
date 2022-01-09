@@ -15,24 +15,12 @@ import busio
 import adafruit_sgp30
 import microcontroller
 
-# Initialize the SGP 30 VOC/CO2 board
-"""
-i2c = busio.I2C(board.SCL, board.SDA, frequency=100000)
-
-# Create library object on our I2C port
-sgp30 = adafruit_sgp30.Adafruit_SGP30(i2c)
-
-print("SGP30 serial #", [hex(i) for i in sgp30.serial])
-
-sgp30.iaq_init()
-sgp30.set_iaq_baseline(0x8973, 0x8AAE)
-"""
-
-funhouse = FunHouse(default_bg=None)
-
+# Constants:
 DELAY = 180 # Dashboard / web update interval in seconds
 
 DARK_LIMIT = 500
+
+SGP30_PRESENT = False
 
 CO2_ERROR = 390
 CO2_LOW = 1000
@@ -58,6 +46,22 @@ PRESSURE_OFFSET = (
 VOC_LOW = 10
 VOC_HIGH = 100
 
+# Initialize the SGP 30 VOC/CO2 board
+if SGP30_PRESENT:
+    i2c = busio.I2C(board.SCL, board.SDA, frequency=100000)
+
+    # Create library object on our I2C port
+    sgp30 = adafruit_sgp30.Adafruit_SGP30(i2c)
+
+    print("SGP30 serial #", [hex(i) for i in sgp30.serial])
+
+    sgp30.iaq_init()
+    sgp30.set_iaq_baseline(0x8973, 0x8AAE)
+    print("eCO2 = " + str(sgp30.eCO2))
+    print("TVOC = " + str(sgp30.TVOC))
+
+funhouse = FunHouse(default_bg=None)
+
 # Turn things off
 funhouse.peripherals.dotstars.fill(0)
 funhouse.network.enabled = False
@@ -65,12 +69,12 @@ funhouse.network.enabled = False
 def set_dotstar(parameter, measurement):
     LED_bright = int(255 * funhouse.display.brightness)
     LED_dim = int(64 * funhouse.display.brightness)
-    if parameter == "co2":
+    if parameter == "co2" and SGP30_PRESENT:
         #dots[0] - co2: color varies with level: yellow - blue - green  - red
         if measurement > CO2_HIGH: funhouse.peripherals.dotstars[0] = (LED_bright, 0, 0)
         elif measurement > CO2_LOW: funhouse.peripherals.dotstars[0] = (0, LED_bright, 0)
         elif measurement > CO2_ERROR: funhouse.peripherals.dotstars[0] = (0, 0, LED_bright)
-        else: funhouse.peripherals.dotstars[1] = (LED_bright, LED_bright, 0) # Calibration problem?
+        else: funhouse.peripherals.dotstars[0] = (LED_bright, LED_bright, 0) # Calibration problem?
     elif parameter == "humidity":
         #dots[1] - humidity: orange   -   green   -   red
         if measurement < HUMIDITY_LOW: funhouse.peripherals.dotstars[1] = (LED_bright, LED_dim, 0)
@@ -81,7 +85,7 @@ def set_dotstar(parameter, measurement):
         if measurement < TEMPERATURE_LOW: funhouse.peripherals.dotstars[3] = (0, 0, LED_bright)
         elif measurement > TEMPERATURE_HIGH: funhouse.peripherals.dotstars[3] = (LED_bright, 0, 0)
         else: funhouse.peripherals.dotstars[3] = (0, LED_bright, 0)
-    elif parameter == "voc":
+    elif parameter == "voc" and SGP30_PRESENT:
         #dots[4] - VOC: color varies with level, green - yellow - red
         if measurement > VOC_HIGH: funhouse.peripherals.dotstars[4] = (LED_bright, 0, 0)
         elif measurement > VOC_LOW: funhouse.peripherals.dotstars[4] = (LED_bright, LED_bright, 0)
@@ -91,27 +95,36 @@ def set_dotstar(parameter, measurement):
 
 def sensor_update(motion_detected, IO_update):
     funhouse.peripherals.led = True
-    cal_temperature_F = (funhouse.peripherals.temperature * 9 / 5 + 32 + TEMPERATURE_OFFSET)
-    cal_humidity = funhouse.peripherals.relative_humidity + HUMIDITY_OFFSET
-    cal_pressure = funhouse.peripherals.pressure + PRESSURE_OFFSET
-    #co2 = sgp30.eCO2
-    #voc = sgp30.TVOC
-    co2 = 400
-    voc = 12
-    cpu_temp_F = microcontroller.cpu.temperature * 9 / 5 + 32
     print("---------------------")
-    print ("CO2 " + str(co2))
-    set_dotstar("co2", co2)
-    print("Humidity %0.1F" % (cal_humidity))
-    set_dotstar("humidity", cal_humidity)
-    print("PIR " + str(motion_detected))
+    cal_temperature_F = (funhouse.peripherals.temperature * 9 / 5 + 32 + TEMPERATURE_OFFSET)
     print("Temperature %0.1F" % (cal_temperature_F))
     set_dotstar("temperature", cal_temperature_F)
-    print("VOC " + str(voc))
-    set_dotstar("voc", voc)
+
+    cal_humidity = funhouse.peripherals.relative_humidity + HUMIDITY_OFFSET
+    print("Humidity %0.1F" % (cal_humidity))
+    set_dotstar("humidity", cal_humidity)
+
+    cal_pressure = funhouse.peripherals.pressure + PRESSURE_OFFSET
     print("Pressure %0.1F" % (cal_pressure))
+
+    if SGP30_PRESENT:
+        co2 = sgp30.eCO2
+        voc = sgp30.TVOC
+        print ("CO2 " + str(co2))
+        set_dotstar("co2", co2)
+        print("VOC " + str(voc))
+        set_dotstar("voc", voc)
+    else:
+        funhouse.peripherals.dotstars[0] = (0, 0, 0)
+        funhouse.peripherals.dotstars[4] = (0, 0, 0)
+
+    print("PIR " + str(motion_detected))
+
     print("Light %0.1F" % (funhouse.peripherals.light))
+
+    cpu_temp_F = microcontroller.cpu.temperature * 9 / 5 + 32
     print("CPU temperature " + str(cpu_temp_F))
+
     # Turn on WiFi
     if IO_update:
         funhouse.network.enabled = True
@@ -121,8 +134,14 @@ def sensor_update(motion_detected, IO_update):
         funhouse.push_to_io("temperature", cal_temperature_F)
         funhouse.push_to_io("humidity", cal_humidity)
         funhouse.push_to_io("pressure", cal_pressure)
-        funhouse.push_to_io("lightlevel", funhouse.peripherals.light)
+        if SGP30_PRESENT:
+            funhouse.push_to_io("co2", co2)
+            funhouse.push_to_io("voc", voc)
+        else:
+            funhouse.push_to_io("co2", 0)
+            funhouse.push_to_io("voc", 0)
         funhouse.push_to_io("pir", motion_detected)
+        funhouse.push_to_io("lightlevel", funhouse.peripherals.light)
         funhouse.push_to_io("cputemp", cpu_temp_F)
         # Turn off WiFi
         funhouse.network.enabled = False

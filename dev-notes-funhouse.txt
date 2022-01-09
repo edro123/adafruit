@@ -26,7 +26,7 @@ Specifications:
             [x] Print to Internal TFT display
             adafruit dashboard
                 [x] temperature
-                [] cpu temp?
+                [x] cpu temp?
                 [x] humidity
                 [x] barometer
                 [x] light level
@@ -54,14 +54,14 @@ Specifications:
             [x] main LED: on when uploading: funhouse.peripherals.led = True
             Use dotstars in alpha order:
                 [n/a] barometer: no LED
-                [] dots[0] - CO2: color varies with level, blue - green - yellow - red
+                [x] dots[0] - CO2: color varies with level, blue - green - yellow - red
 
-                [] dots[1] - humidity: orange (low) - green (OK) - red (high)
+                [x] dots[1] - humidity: orange (low) - green (OK) - red (high)
                 [n/a] light level no LED
                 [x] dots[2] - PIR: white
-                    [] fades with time?
-                [] dots[3] - temperature: color varies with level, blue - green - yellow - red
-                [] dots[4] - VOC: color varies with level, blue - green - yellow - red
+                    [NO] fades with time?
+                [x] dots[3] - temperature: color varies with level, blue - green - yellow - red
+                [x] dots[4] - VOC: color varies with level, blue - green - yellow - red
     libraries used so far:
         adafruit_ahtx0.mpy		adafruit_io
         adafruit_bitmap_font		adafruit_minimqtt
@@ -75,12 +75,16 @@ Specifications:
         [x] Add a function for humidity and temperature LEDs
         [] Code clean up
             [x] Consolodate constants
-            [] try except
-            [] test for or protect against non-existent sensors 
-        [] test sgp 30
-        [] add sgp 30 CO2 and VOC
-            [] read sensors
+            [] try except?
+            test for or protect against non-existent sensors 
+                use constants
+                    [x] SGP30
+                    [] PIR
+        [x] standalone test sgp 30
+        [x] add sgp 30 CO2 and VOC
+            [x] read sensors
             [x] update LED colors based on measurements
+        [] ten hour calibration
     Future:
         Modes? 
             [x] nightlight???
@@ -93,5 +97,7 @@ Specifications:
                 slow email notification via IFTT
         [x] add cpu temperature: https://learn.adafruit.com/adafruit-funhouse/cpu-temperature
 1/6/22
-    Code is ready for SGP 30 test / debug
+    [] SGP 30 test / debug
+        works standalone
+        
     [] Can LED brightness control be re-factored?
