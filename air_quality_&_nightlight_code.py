@@ -20,12 +20,6 @@ DELAY = 180 # Dashboard / web update interval in seconds
 
 DARK_LIMIT = 500
 
-SGP30_PRESENT = False
-
-CO2_ERROR = 390
-CO2_LOW = 1000
-CO2_HIGH = 2500
-
 HUMIDITY_OFFSET = (
     14  # mm Hg to adjustment to calibrate the humidity sensor
 )
@@ -43,14 +37,21 @@ PRESSURE_OFFSET = (
     1  # mm Hg to adjustment to calibrate the pressure sensor
 )
 
+CO2_ERROR = 390
+CO2_LOW = 1000
+CO2_HIGH = 2500
+
 VOC_LOW = 10
 VOC_HIGH = 100
 
-# Initialize the SGP 30 VOC/CO2 board
-if SGP30_PRESENT:
-    i2c = busio.I2C(board.SCL, board.SDA, frequency=100000)
+funhouse = FunHouse(default_bg=None)
 
-    # Create library object on our I2C port
+SGP30_PRESENT = True
+
+# Initialize the SGP 30 VOC/CO2 board
+#See this link for how to handle the i2c bus on the funhouse board: https://circuitpython.readthedocs.io/projects/funhouse/en/latest/
+if SGP30_PRESENT:
+    i2c = board.I2C()
     sgp30 = adafruit_sgp30.Adafruit_SGP30(i2c)
 
     print("SGP30 serial #", [hex(i) for i in sgp30.serial])
@@ -59,8 +60,6 @@ if SGP30_PRESENT:
     sgp30.set_iaq_baseline(0x8973, 0x8AAE)
     print("eCO2 = " + str(sgp30.eCO2))
     print("TVOC = " + str(sgp30.TVOC))
-
-funhouse = FunHouse(default_bg=None)
 
 # Turn things off
 funhouse.peripherals.dotstars.fill(0)
