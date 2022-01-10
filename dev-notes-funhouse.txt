@@ -97,7 +97,27 @@ Specifications:
                 slow email notification via IFTT
         [x] add cpu temperature: https://learn.adafruit.com/adafruit-funhouse/cpu-temperature
 1/6/22
-    [] SGP 30 test / debug
+    [x] integrate / test / debug SGP30
         works standalone
+        now works integrated!
+        this info was the key: https://circuitpython.readthedocs.io/projects/funhouse/en/latest/
         
+1/10/22
+    [] Figure out sensor calibration
+        [x] hold down button on restart to put in calibration mode
+        push up button to upload cal data to IO
+        record cal values every hour
+            [] to IO
+            [] to file on Funhouse
+        [x] stop displaying co2 and voc values on text dashboard
+        [] re orient the sgp30 board so that the sensor faces down
+        then update the source code to set a new baseline with:
+            sgp30.set_iaq_baseline(co2eq_base, tvoc_base
+        twelve hour run results:
+            2022/01/10 5:35:49AM	tvoc_base: 37110		
+            2022/01/10 5:35:49AM	co2eq_base: 36337		
+            2022/01/09 9:45:48PM	tvoc_base: 37128		
+            2022/01/09 9:45:47PM	co2eq_base: 36442
+    [x] Add offset values for co2 and voc
+    [] try / except to determine whether sgp30 and PIR are present?
     [] Can LED brightness control be re-factored?
