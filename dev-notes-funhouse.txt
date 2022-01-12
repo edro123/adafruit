@@ -133,30 +133,54 @@ Specifications:
             co2: 36348 = 0x8DFC
         [x] Add offset values for co2 and voc
     [x] re-orient the sgp30 board so that the sensor (chip side) faces down
-    [x] try / except to determine whether sgp30 and PIR are present?
+    [x] try / except to determine whether sgp30 present
+    [NO] try / except to determine whether PIR present: it returns no detect if no PIR
     modes?:
         [x] On start up: hold down sel button to calibrate
+            cal mode operates normally, except will add cal readings hourly IO text feed 
+            exception handles absense of SGP30 add on board
         While running:
-            [x] Hold up button to shift to normal
-                force an IO update when pressed?
+            expceptions handle network errors
+            [x] sensor values posted to IO feeds:
+                    eCO2
+                    humidity
+                    PIR
+                    temperature
+                    TVOC
+                    barometric pressure
+                    light level
+                    cpu temperature
+            [x] also post system info text feed to IO
+            [x] dotstar colors indicate reading levels: controlled by constants
+                    eCO2
+                    humidity
+                    PIR
+                    temperature
+                    TVOC
+            [] Raw sensor readings are adjusted with offset and slope calibration values
+            [x] slider will control brightness (not very well in low power mode)
+            [x] Hold up button to shift to normal mode
+                forces IO update when pressed
                 0.2 s sleep
                 brightness
                     defaults to 0.25
                     control with slider
-                60 s update
+                60 s IO update
             [x] Hold down button to shift to low power
-                force an IO update when pressed?
+                forces an IO update when pressed
                 2.0 s sleep
                 brightness
                     defaults to 0.0
                     slider disables
                 update every 5 minutes?
                 hold a button to go to normal?
+1/12/22
     [x] re-test cal mode
     [x] Test status messages to the text feed
     [x] test wifi try / except (rename secrets file)
+    [] Add calvin jpg background?
     [] make compensation more sophisticated: offset and slope
     [] decide on file writes. would need for fully auto re-cal w/o internet
     [] Can LED brightness control be re-factored?
     [] Get SGP serial number into IO text feed
-        
+
