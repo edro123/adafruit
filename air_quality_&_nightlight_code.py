@@ -4,7 +4,7 @@
 #
 # SPDX-License-Identifier: MIT
 """
-This code was intiially based on"
+This code was intiially based on
     adafruit example: https://learn.adafruit.com/creating-funhouse-projects-with-circuitpython/temperature-logger-example
     ...
 """
@@ -17,15 +17,13 @@ import adafruit_sgp30
 import microcontroller
 
 # Constants:
-IO_UPDATE_INTERVAL = 180 # Dashboard / web update interval in seconds
-SGP30_CAL_DATA_SAVE_INTERVAL = 3600 # in seconds, only in calibrate mode
 
 DARK_LIMIT = 500 # nighlight mode on if light level below this
 
 HUMIDITY_OFFSET = (
     11  # mm Hg to adjust the humidity sensor to match a reference
 )
-HUMIDITY_LOW = 45
+HUMIDITY_LOW = 45 
 HUMIDITY_HIGH = 58
 
 TEMPERATURE_OFFSET = (
@@ -52,27 +50,42 @@ VOC_OFFSET = (
 VOC_LOW = 10
 VOC_HIGH = 100
 
+IO_queue = ""
+def add_to_IO_queue(message, print_it_too):
+    global IO_queue
+    # if IO_queue is not empty: add a new line
+    if IO_queue == "":
+        IO_queue = message
+    else:
+        IO_queue = IO_queue + "\n" + message
+    if print_it_too: print("IO_queue is now: " + message)
+
 funhouse = FunHouse(default_bg=None)
-
-
-SGP30_PRESENT = True
 
 # Initialize the SGP 30 VOC/CO2 board
 #See this link for how to handle the i2c bus on the funhouse board: https://circuitpython.readthedocs.io/projects/funhouse/en/latest/
-if SGP30_PRESENT:
-    # initialize the sgpl30
+try:
     i2c = board.I2C()
     sgp30 = adafruit_sgp30.Adafruit_SGP30(i2c)
     print("SGP30 serial #", [hex(i) for i in sgp30.serial])
     sgp30.iaq_init()
 
-    if funhouse.peripherals.button_down:
-        print("Down switch pressed on startup, and SGP30_PRESENT: start calibration")
-        SGP30_CALIBRATED = False
+    if funhouse.peripherals.button_sel:
+        SGP30_CALIBRATING = True
+        add_to_IO_queue("SGP30 present and select switch pressed on startup: start calibration.", False)
     else:
-        SGP30_CALIBRATED = True
-        #load baseline calibration data
-        sgp30.set_iaq_baseline(0x8973, 0x8AAE)
+        SGP30_CALIBRATING = False
+        #load baseline calibration data (eCO2, TVOC)
+        # factory numbers: sgp30.set_iaq_baseline(0x8973, 0x8AAE)
+        # 1/10/22 indoor / outdoor: sgp30.set_iaq_baseline(0x8DFC, 0x91EE)
+        # 1/11/22 outdoor:
+        sgp30.set_iaq_baseline(0x9872, 0x98D7)
+        add_to_IO_queue("SGP30 Present and initialized.", False)
+    SGP30_PRESENT = True
+except:
+    add_to_IO_queue("SGP30 initializing error: do not use.", False)
+    SGP30_PRESENT = False
+    SGP30_CALIBRATING = False
 
 # Turn things off
 funhouse.peripherals.dotstars.fill(0)
@@ -106,6 +119,7 @@ def set_dotstar(parameter, measurement):
         print("set_dotstar parameter mismatch")
 
 def sensor_update(motion_detected, IO_update, save_sgp30_cals):
+    global IO_queue
     funhouse.peripherals.led = True
     print("---------------------")
     cal_temperature_F = (funhouse.peripherals.temperature * 9 / 5 + 32 + TEMPERATURE_OFFSET)
@@ -139,40 +153,78 @@ def sensor_update(motion_detected, IO_update, save_sgp30_cals):
 
     # Turn on WiFi
     if IO_update:
-        funhouse.network.enabled = True
-        # Connect to WiFi
-        funhouse.network.connect()
-        # Push to IO using REST
-        funhouse.push_to_io("temperature", cal_temperature_F)
-        funhouse.push_to_io("humidity", cal_humidity)
-        funhouse.push_to_io("pressure", cal_pressure)
-        if SGP30_PRESENT:
-            funhouse.push_to_io("co2", co2)
-            funhouse.push_to_io("voc", voc)
-            if save_sgp30_cals:
-                co2_base = sgp30.baseline_eCO2
-                tvoc_base = sgp30.baseline_TVOC
-                co2_base_string = "co2eq_base: " + str(co2_base)
-                funhouse.push_to_io("text", co2_base_string)
-                tvoc_base_string = "tvoc_base: " + str(tvoc_base)
-                funhouse.push_to_io("text", tvoc_base_string)
-                with open("sgp30_cal_data.txt", a) as f:
-                    f.write(co2_base_string)
-                    f.write(tvoc_base_string)
-        else:
-            funhouse.push_to_io("co2", 0)
-            funhouse.push_to_io("voc", 0)
-        funhouse.push_to_io("pir", motion_detected)
-        funhouse.push_to_io("lightlevel", funhouse.peripherals.light)
-        funhouse.push_to_io("cputemp", cpu_temp_F)
+        try:
+            funhouse.network.enabled = True
+            # Connect to WiFi
+            funhouse.network.connect()
+            # Push to IO using REST
+        except:
+            add_to_IO_queue("WiFi error - check secrets file!", True)
+            # Turn off WiFi, but leave red led on to indicate error
+            #funhouse.peripherals.led = False
+            funhouse.network.enabled = False
+            return
+        try:
+            funhouse.push_to_io("temperature", cal_temperature_F)
+            funhouse.push_to_io("humidity", cal_humidity)
+            funhouse.push_to_io("pressure", cal_pressure)
+            if SGP30_PRESENT:
+                funhouse.push_to_io("co2", co2)
+                funhouse.push_to_io("voc", voc)
+                if save_sgp30_cals:
+                    co2_base = sgp30.baseline_eCO2
+                    tvoc_base = sgp30.baseline_TVOC
+                    co2_base_string = "co2eq_base: " + str(co2_base)
+                    funhouse.push_to_io("text", co2_base_string)
+                    print(co2_base_string)
+                    tvoc_base_string = "tvoc_base: " + str(tvoc_base)
+                    funhouse.push_to_io("text", tvoc_base_string)
+                    print(tvoc_base_string)
+                    """
+                    Normally the file system is read only. See this link - https://learn.adafruit.com/cpu-temperature-logging-with-circuit-python/writing-to-the-filesystem
+                    with open("sgp30_cal_data.txt", "a") as f:
+                        f.write(co2_base_string)
+                        f.write(tvoc_base_string)
+                    """
+            else:
+                funhouse.push_to_io("co2", 0)
+                funhouse.push_to_io("voc", 0)
+            funhouse.push_to_io("pir", motion_detected)
+            funhouse.push_to_io("lightlevel", funhouse.peripherals.light)
+            funhouse.push_to_io("cputemp", cpu_temp_F)
+            # push IO_queue to text IO feed then clear it
+            if IO_queue != "":
+                try:
+                    print("IO text feed: \n" + IO_queue)
+                    funhouse.push_to_io("text", IO_queue)
+                except:
+                    print("Error pushing to IO text feed")
+                    print("Error text was " + IO_queue)
+                IO_queue = ""
+            else:
+                print("IO_queue is empty")
+        except:
+            add_to_IO_queue("IO connect error - check secrets file!", True)
+            # Turn off WiFi, but leave red led on to indicate error
+            #funhouse.peripherals.led = False
+            funhouse.network.enabled = False
+            return
         # Turn off WiFi
+        funhouse.peripherals.led = False
         funhouse.network.enabled = False
-    funhouse.peripherals.led = False
+
+# Timing defaults to low power values
+SGP30_CAL_DATA_SAVE_INTERVAL = 3600 # in seconds, only in calibrate mode
+IO_UPDATE_INTERVAL = 180 # Dashboard / web update interval in seconds
+SLEEP_INTERVAL = 2.0 # light sleep time for each loop
+funhouse.display.brightness = 0.25
+add_to_IO_queue("Low power mode on startup", False)
 
 IO_update_time = time.time() - IO_UPDATE_INTERVAL
 SGP30_cal_data_save_time = time.time() - SGP30_CAL_DATA_SAVE_INTERVAL
 
 motion_detected = 0
+add_to_IO_queue("Funhouse start up complete", False)
 while True:
     if motion_detected == 0 and funhouse.peripherals.pir_sensor:
         motion_detected = 1
@@ -183,13 +235,13 @@ while True:
         else:
             funhouse.peripherals.dotstars[2] = (16, 16, 16)
     #set TFT display and LED brightness with slider value
-    slider = funhouse.peripherals.slider            
+    slider = funhouse.peripherals.slider
     if slider is not None:
         funhouse.display.brightness = slider
         print("Slider changed to " + str(funhouse.display.brightness))
-        sensor_update(motion_detected, False, up_button_pressed)
+        sensor_update(motion_detected, False, False)
     if time.time() - IO_update_time > IO_UPDATE_INTERVAL:
-        if not SGP30_CALIBRATED and (time.time() - SGP30_cal_data_save_time > SGP30_CAL_DATA_SAVE_INTERVAL):
+        if SGP30_CALIBRATING and (time.time() - SGP30_cal_data_save_time > SGP30_CAL_DATA_SAVE_INTERVAL):
             sensor_update(motion_detected, True, True)
             SGP30_cal_data_save_time = time.time()
         else:
@@ -197,5 +249,20 @@ while True:
         IO_update_time = time.time()
         motion_detected = 0
         funhouse.peripherals.dotstars[2] = (0, 0, 0)
-    else:
-        funhouse.enter_light_sleep(0.5)
+
+    funhouse.enter_light_sleep(SLEEP_INTERVAL)
+
+    if funhouse.peripherals.button_up:
+        IO_UPDATE_INTERVAL = 30 # Dashboard / web update interval in seconds
+        SLEEP_INTERVAL = 0.2 # light sleep time for each loop
+        funhouse.display.brightness = 0.25
+        add_to_IO_queue("Normal mode", False)
+        sensor_update(motion_detected, True, False)
+        IO_update_time = time.time()
+    elif funhouse.peripherals.button_down:
+        IO_UPDATE_INTERVAL = 180 # Dashboard / web update interval in seconds
+        SLEEP_INTERVAL = 2.0 # light sleep time for each loop
+        funhouse.display.brightness = 0
+        add_to_IO_queue("Low power mode", False)
+        sensor_update(motion_detected, True, False)
+        IO_update_time = time.time()
