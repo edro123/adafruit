@@ -154,8 +154,9 @@ Specifications:
                 hold a button to go to normal?
     [x] re-test cal mode
     [x] Test status messages to the text feed
-    [] test wifi try / except (rename secrets file)
-    [] sgp30 co2 readings are too low?
+    [x] test wifi try / except (rename secrets file)
+    [] make compensation more sophisticated: offset and slope
     [] decide on file writes. would need for fully auto re-cal w/o internet
     [] Can LED brightness control be re-factored?
+    [] Get SGP serial number into IO text feed
         
