@@ -178,9 +178,22 @@ Specifications:
     [x] re-test cal mode
     [x] Test status messages to the text feed
     [x] test wifi try / except (rename secrets file)
+1/14/22
+    [x] make compensation more sophisticated: offset and slope
+1/15/22
+    [x] update dashboard limits to match code
+
+
+
+    [] make PIR motion a boolean?
+    [] redo calibration and adjustments: they aren't very close
+    [] when running, use select button to toggle between raw and adjusted values
+    [] CO2 more accurate if sampled 1/s?
+    [] change barometer to value - rising / falling
+    [] Get SGP serial number into IO text feed?
+
     [] Add calvin jpg background?
-    [] make compensation more sophisticated: offset and slope
+    [] Format readme
     [] decide on file writes. would need for fully auto re-cal w/o internet
     [] Can LED brightness control be re-factored?
-    [] Get SGP serial number into IO text feed
 

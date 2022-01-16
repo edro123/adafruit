@@ -9,10 +9,10 @@ This code was intiially based on
     ...
 """
 
-from adafruit_funhouse import FunHouse
 import time
+from adafruit_funhouse import FunHouse
 import board
-import busio
+#import busio
 import adafruit_sgp30
 import microcontroller
 
@@ -20,44 +20,41 @@ import microcontroller
 
 DARK_LIMIT = 500 # nighlight mode on if light level below this
 
-HUMIDITY_OFFSET = (
-    11  # mm Hg to adjust the humidity sensor to match a reference
+HUMIDITY_MULTIPLIER = (
+    1.48  # % Multiplier to match the RH to a reference
 )
 HUMIDITY_LOW = 45 
-HUMIDITY_HIGH = 58
+HUMIDITY_HIGH = 55
 
-TEMPERATURE_OFFSET = (
-    -5.5  # Degrees F to adjust the temperature to compensate for board produced heat
+TEMPERATURE_MULTIPLIER = (
+    0.864  # Multiplier to match the temperature to reference
     # Access the cpu temp and model a dynamic offset?
 )
-TEMPERATURE_LOW = 65
-TEMPERATURE_HIGH = 78
+TEMPERATURE_LOW = 62
+TEMPERATURE_HIGH = 80
 
 PRESSURE_OFFSET = (
     1  # mm Hg to adjust the pressure to match a reference
 )
 
-CO2_OFFSET = (
-    0  # PPM to adjust the CO2 value to match a reference
+CO2_MULTIPLIER = (
+    0.35  # multiplier to match CO2 value to Netatmo
 )
-CO2_ERROR = 390
+CO2_ERROR = 400
 CO2_LOW = 1000
-CO2_HIGH = 2500
+CO2_HIGH = 2000
 
 VOC_OFFSET = (
     0  # PPM to adjust the VOC value to match a reference
 )
 VOC_LOW = 10
-VOC_HIGH = 100
+VOC_HIGH = 2500
 
 IO_queue = ""
 def add_to_IO_queue(message, print_it_too):
     global IO_queue
     # if IO_queue is not empty: add a new line
-    if IO_queue == "":
-        IO_queue = message
-    else:
-        IO_queue = IO_queue + "\n" + message
+    IO_queue = message if IO_queue == "" else IO_queue + "\n" + message
     if print_it_too: print("IO_queue is now: " + message)
 
 funhouse = FunHouse(default_bg=None)
@@ -100,51 +97,51 @@ def set_dotstar(parameter, measurement):
         elif measurement > CO2_LOW: funhouse.peripherals.dotstars[0] = (0, LED_bright, 0)
         elif measurement > CO2_ERROR: funhouse.peripherals.dotstars[0] = (0, 0, LED_bright)
         else: funhouse.peripherals.dotstars[0] = (LED_bright, LED_bright, 0) # Calibration problem?
-    elif parameter == "humidity":
-        #dots[1] - humidity: orange   -   green   -   red
-        if measurement < HUMIDITY_LOW: funhouse.peripherals.dotstars[1] = (LED_bright, LED_dim, 0)
-        elif measurement > HUMIDITY_HIGH: funhouse.peripherals.dotstars[1] = (LED_bright, 0, 0)
-        else: funhouse.peripherals.dotstars[1] = (0, LED_bright, 0)
+    elif parameter == "voc" and SGP30_PRESENT:
+        #dots[4] - VOC: color varies with level, blue - green - red
+        if measurement > VOC_HIGH: funhouse.peripherals.dotstars[1] = (LED_bright, 0, 0)
+        elif measurement > VOC_LOW: funhouse.peripherals.dotstars[1] = (0, LED_bright, 0)
+        else: funhouse.peripherals.dotstars[1] = (0, 0, LED_bright)
     elif parameter == "temperature":
         #dots[3] - temperature: blue   -   green   -   yellow
         if measurement < TEMPERATURE_LOW: funhouse.peripherals.dotstars[3] = (0, 0, LED_bright)
         elif measurement > TEMPERATURE_HIGH: funhouse.peripherals.dotstars[3] = (LED_bright, 0, 0)
         else: funhouse.peripherals.dotstars[3] = (0, LED_bright, 0)
-    elif parameter == "voc" and SGP30_PRESENT:
-        #dots[4] - VOC: color varies with level, green - yellow - red
-        if measurement > VOC_HIGH: funhouse.peripherals.dotstars[4] = (LED_bright, 0, 0)
-        elif measurement > VOC_LOW: funhouse.peripherals.dotstars[4] = (LED_bright, LED_bright, 0)
+    elif parameter == "humidity":
+        #dots[1] - humidity: orange   -   green   -   red
+        if measurement < HUMIDITY_LOW: funhouse.peripherals.dotstars[4] = (LED_bright, LED_dim, 0)
+        elif measurement > HUMIDITY_HIGH: funhouse.peripherals.dotstars[4] = (LED_bright, 0, 0)
         else: funhouse.peripherals.dotstars[4] = (0, LED_bright, 0)
     else:
         print("set_dotstar parameter mismatch")
 
 def sensor_update(motion_detected, IO_update, save_sgp30_cals):
     global IO_queue
-    funhouse.peripherals.led = True
     print("---------------------")
-    cal_temperature_F = (funhouse.peripherals.temperature * 9 / 5 + 32 + TEMPERATURE_OFFSET)
-    print("Temperature %0.1F" % (cal_temperature_F))
+
+    if SGP30_PRESENT:
+        co2 = max(CO2_MULTIPLIER * sgp30.eCO2, 418)
+        voc = sgp30.TVOC + VOC_OFFSET
+        print ("0 - CO2 " + str(co2))
+        set_dotstar("co2", co2)
+        print("1 - VOC " + str(voc))
+        set_dotstar("voc", voc)
+    else:
+        funhouse.peripherals.dotstars[0] = (0, 0, 0)
+        funhouse.peripherals.dotstars[1] = (0, 0, 0)
+
+    print("2 - PIR " + str(motion_detected))
+
+    cal_temperature_F = (TEMPERATURE_MULTIPLIER * funhouse.peripherals.temperature * 9 / 5 + 32)
+    print("3 - Temperature %0.1F" % (cal_temperature_F))
     set_dotstar("temperature", cal_temperature_F)
 
-    cal_humidity = funhouse.peripherals.relative_humidity + HUMIDITY_OFFSET
-    print("Humidity %0.1F" % (cal_humidity))
+    cal_humidity = HUMIDITY_MULTIPLIER * funhouse.peripherals.relative_humidity
+    print("4 - Humidity %0.1F" % (cal_humidity))
     set_dotstar("humidity", cal_humidity)
 
     cal_pressure = funhouse.peripherals.pressure + PRESSURE_OFFSET
     print("Pressure %0.1F" % (cal_pressure))
-
-    if SGP30_PRESENT:
-        co2 = sgp30.eCO2 + CO2_OFFSET
-        voc = sgp30.TVOC + VOC_OFFSET
-        print ("CO2 " + str(co2))
-        set_dotstar("co2", co2)
-        print("VOC " + str(voc))
-        set_dotstar("voc", voc)
-    else:
-        funhouse.peripherals.dotstars[0] = (0, 0, 0)
-        funhouse.peripherals.dotstars[4] = (0, 0, 0)
-
-    print("PIR " + str(motion_detected))
 
     print("Light %0.1F" % (funhouse.peripherals.light))
 
@@ -153,6 +150,7 @@ def sensor_update(motion_detected, IO_update, save_sgp30_cals):
 
     # Turn on WiFi
     if IO_update:
+        funhouse.peripherals.led = True
         try:
             funhouse.network.enabled = True
             # Connect to WiFi
@@ -160,7 +158,7 @@ def sensor_update(motion_detected, IO_update, save_sgp30_cals):
             # Push to IO using REST
         except:
             add_to_IO_queue("WiFi error - check secrets file!", True)
-            # Turn off WiFi, but leave red led on to indicate error
+            # Turn off WiFi, but leave red led on to indicate IO error
             #funhouse.peripherals.led = False
             funhouse.network.enabled = False
             return
@@ -205,29 +203,33 @@ def sensor_update(motion_detected, IO_update, save_sgp30_cals):
                 print("IO_queue is empty")
         except:
             add_to_IO_queue("IO connect error - check secrets file!", True)
-            # Turn off WiFi, but leave red led on to indicate error
+            # Turn off WiFi, but leave red led on to indicate IO error
             #funhouse.peripherals.led = False
             funhouse.network.enabled = False
             return
         # Turn off WiFi
         funhouse.peripherals.led = False
         funhouse.network.enabled = False
+        print("Push to IO complete")
 
 # Timing defaults to low power values
 SGP30_CAL_DATA_SAVE_INTERVAL = 3600 # in seconds, only in calibrate mode
-IO_UPDATE_INTERVAL = 180 # Dashboard / web update interval in seconds
-SLEEP_INTERVAL = 2.0 # light sleep time for each loop
-funhouse.display.brightness = 0.25
-add_to_IO_queue("Low power mode on startup", False)
+FAST_IO_UPDATE_INTERVAL = 30 # Dashboard / web update interval in seconds
+FAST_SLEEP_INTERVAL = 0.2 # light sleep time for each loop
 
-IO_update_time = time.time() - IO_UPDATE_INTERVAL
+IO_update_interval = 10 * FAST_IO_UPDATE_INTERVAL
+sleep_interval = 10 * FAST_SLEEP_INTERVAL
+funhouse.display.brightness = 0.25
+print("Slow update mode on startup")
+
+IO_update_time = time.time() - IO_update_interval
 SGP30_cal_data_save_time = time.time() - SGP30_CAL_DATA_SAVE_INTERVAL
 
-motion_detected = 0
+PIR_motion_detected = 0
 add_to_IO_queue("Funhouse start up complete", False)
 while True:
-    if motion_detected == 0 and funhouse.peripherals.pir_sensor:
-        motion_detected = 1
+    if PIR_motion_detected == 0 and funhouse.peripherals.pir_sensor:
+        PIR_motion_detected = 1
         print("PIR Motion detected!")
         if funhouse.display.brightness == 0 and funhouse.peripherals.light < DARK_LIMIT:
             #Night light mode
@@ -239,30 +241,32 @@ while True:
     if slider is not None:
         funhouse.display.brightness = slider
         print("Slider changed to " + str(funhouse.display.brightness))
-        sensor_update(motion_detected, False, False)
-    if time.time() - IO_update_time > IO_UPDATE_INTERVAL:
+        sensor_update(PIR_motion_detected, False, False)
+    if time.time() - IO_update_time > IO_update_interval:
         if SGP30_CALIBRATING and (time.time() - SGP30_cal_data_save_time > SGP30_CAL_DATA_SAVE_INTERVAL):
-            sensor_update(motion_detected, True, True)
+            sensor_update(PIR_motion_detected, True, True)
             SGP30_cal_data_save_time = time.time()
         else:
-            sensor_update(motion_detected, True, False)
+            sensor_update(PIR_motion_detected, True, False)
         IO_update_time = time.time()
-        motion_detected = 0
+        PIR_motion_detected = 0
         funhouse.peripherals.dotstars[2] = (0, 0, 0)
 
-    funhouse.enter_light_sleep(SLEEP_INTERVAL)
+    funhouse.enter_light_sleep(sleep_interval)
 
     if funhouse.peripherals.button_up:
-        IO_UPDATE_INTERVAL = 30 # Dashboard / web update interval in seconds
-        SLEEP_INTERVAL = 0.2 # light sleep time for each loop
+        # set to fast mode
+        IO_update_interval = FAST_IO_UPDATE_INTERVAL
+        sleep_interval = FAST_SLEEP_INTERVAL
         funhouse.display.brightness = 0.25
-        add_to_IO_queue("Normal mode", False)
-        sensor_update(motion_detected, True, False)
+        print("Switch to fast update")
+        sensor_update(PIR_motion_detected, False, False)
         IO_update_time = time.time()
     elif funhouse.peripherals.button_down:
-        IO_UPDATE_INTERVAL = 180 # Dashboard / web update interval in seconds
-        SLEEP_INTERVAL = 2.0 # light sleep time for each loop
+        # set to slow mode
+        IO_update_interval = 10 * FAST_IO_UPDATE_INTERVAL
+        sleep_interval = 10 * FAST_SLEEP_INTERVAL
         funhouse.display.brightness = 0
-        add_to_IO_queue("Low power mode", False)
-        sensor_update(motion_detected, True, False)
+        print("Switch to slow update")
+        sensor_update(PIR_motion_detected, True, False)
         IO_update_time = time.time()
