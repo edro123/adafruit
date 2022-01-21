@@ -1,3 +1,7 @@
+Adafruit Funhouse microcontroller board
+To initialize with the self test code:
+
+
 Design goal: replace netatmo with programmable, better capability.
 Specifications:
     Inputs and Outputs:
@@ -182,15 +186,24 @@ Specifications:
     [x] make compensation more sophisticated: offset and slope
 1/15/22
     [x] update dashboard limits to match code
+1/18/22
+    [x] add constant in code to control whether to adjust raw values
+    [x] read CO2 each loop. 1/s read makes sgp30 more accurate?
+    [x] re-factor push_to_IO_queue - simplify
+    powered on with new sw version at ~9:36am and switched to fast update (so co2 is /s)
+1/19/22
+    [x] LED on while busy = sleeping or io update
+    [x] revised print / add_to_io_feed
+1/20/22
+    co2 sensor went squirelly. Better after reboot
+    
 
-
-
+    [] use select button to toggle night light mode?
     [] make PIR motion a boolean?
     [] redo calibration and adjustments: they aren't very close
-    [] when running, use select button to toggle between raw and adjusted values
-    [] CO2 more accurate if sampled 1/s?
-    [] change barometer to value - rising / falling
+    [] change barometer to value - rising / falling?
     [] Get SGP serial number into IO text feed?
+    [] Access the cpu temp and model a dynamic offset?
 
     [] Add calvin jpg background?
     [] Format readme
