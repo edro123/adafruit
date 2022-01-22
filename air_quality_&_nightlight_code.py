@@ -4,13 +4,11 @@ https://learn.adafruit.com/creating-funhouse-projects-with-circuitpython/tempera
 """
 
 import time
+# from urllib.request import CacheFTPHandler
 from adafruit_funhouse import FunHouse
 import board
 import adafruit_sgp30
 import microcontroller
-
-# Set controls:
-ADJUST_RAW_VALUES = True
 
 #  Timing constants
 SGP30_CAL_DATA_SAVE_INTERVAL = 3600  # in seconds, only in calibrate mode
@@ -23,49 +21,38 @@ NORMAL_SLEEP_INTERVAL = 1  # normal loop sleep time
 
 DARK_THRESHOLD = 420  # nighlight mode on if light level below this
 
-HUMIDITY_SCALE = (
-    1  # % Multiplier to match the RH to a reference
-)
-HUMIDITY_OFFSET = (
-    15.6  # % Offset to match the RH to a reference
-)
-HUMIDITY_LOW = 45
-HUMIDITY_HIGH = 55
+# linear calibration constants: y = Mx + B
+HUMIDITY_M = 1.0669
+HUMIDITY_B = 13.418
 
-TEMPERATURE_SCALE = (
-    1  # Multiplier to match the temperature to reference
-)
-TEMPERATURE_OFFSET = (
-    -11.9  # % Offset to match the temperature to a reference
-)
-TEMPERATURE_LOW = 62
-TEMPERATURE_HIGH = 80
+TEMPERATURE_M = 1.2129
+TEMPERATURE_B = -29.553
 
-PRESSURE_SCALE = (
-    1  # Multiplier to match the temperature to reference
-)
-PRESSURE_OFFSET = (
-    -1.6  # mm Hg to adjust the pressure to match a reference
-)
+PRESSURE_M = 0.8471
+PRESSURE_B = 157.59
 
-CO2_SCALE = (
-    1  # multiplier to match CO2 value to Netatmo
-)
-CO2_OFFSET = (
-    0  # % Offset to match the co2 to a reference
-)
-CO2_ERROR = 400
-CO2_LOW = 1000
-CO2_HIGH = 2000
+CO2_M = 0.2746
+CO2_B = 303.48
 
-VOC_SCALE = (
-    1  # multiplier to match CO2 value to Netatmo
-)
-VOC_OFFSET = (
-    0  # PPM to adjust the VOC value to match a reference
-)
-VOC_LOW = 10
-VOC_HIGH = 2500
+VOC_M = 1
+VOC_B = 0
+
+# LED color control constants
+HUMIDITY_BLUE = 42
+# HUMIDITY GREEN 42 - 53
+HUMIDITY_RED = 53
+
+TEMPERATURE_BLUE = 62
+# TEMPERATURE GREEN 62 - 80
+TEMPERATURE_RED = 80
+
+CO2_BLUE = 800
+# CO2 GREEN 800 - 2500
+CO2_RED = 2500
+
+VOC_BLUE = 200
+# VOC GREEN 200 - 2500
+VOC_RED = 2500
 
 io_queue = ""
 
@@ -80,6 +67,13 @@ def add_to_io_queue(message, print_it_too):
 
 funhouse = FunHouse(default_bg=None)
 
+# If the select button is pressed on start up, enter calibration mode and use raw sensor values
+if funhouse.peripherals.button_sel:
+    CALIBRATE = True
+    add_to_io_queue("Select pressed on startup - calibration mode.", True)
+else:
+    CALIBRATE = False
+
 # Initialize the SGP 30 VOC/CO2 board
 # See this link for how to handle the i2c bus on the funhouse board:
 # https://circuitpython.readthedocs.io/projects/funhouse/en/latest/
@@ -89,11 +83,9 @@ try:
     print("SGP30 serial #", [hex(i) for i in sgp30.serial])
     sgp30.iaq_init()
 
-    if funhouse.peripherals.button_sel:
-        SGP30_CALIBRATING = True
+    if CALIBRATE:
         add_to_io_queue("SGP30 present - calibration mode.", True)
     else:
-        SGP30_CALIBRATING = False
         # load baseline calibration data (eCO2, TVOC)
         # factory numbers: sgp30.set_iaq_baseline(0x8973, 0x8AAE)
         # 1/10/22 indoor / outdoor: sgp30.set_iaq_baseline(0x8DFC, 0x91EE)
@@ -104,7 +96,6 @@ try:
 except RuntimeError:
     add_to_io_queue("SGP30 initializing error: do not use.", True)
     SGP30_PRESENT = False
-    SGP30_CALIBRATING = False
 
 # Turn things off
 funhouse.peripherals.dotstars.fill(0)
@@ -112,44 +103,51 @@ funhouse.network.enabled = False
 
 
 def set_dotstar(parameter, measurement):
+    # Use the limit constants to set LED colors
+    # red > HIGH, blue < LOW, green > LOW and < HIGH, yellow = error
     led_bright = int(255 * funhouse.display.brightness)
-    led_dim = int(64 * funhouse.display.brightness)
     if parameter == "co2" and SGP30_PRESENT:
-        # dots[0] - co2: color varies with level: yellow - blue - green  - red
-        if measurement > CO2_HIGH:
+        if measurement < 418:
+            funhouse.peripherals.dotstars[0] = (led_bright, led_bright, 0)
+        elif measurement > CO2_RED:
             funhouse.peripherals.dotstars[0] = (led_bright, 0, 0)
-        elif measurement > CO2_LOW:
-            funhouse.peripherals.dotstars[0] = (0, led_bright, 0)
-        elif measurement > CO2_ERROR:
+        elif measurement < CO2_BLUE:
             funhouse.peripherals.dotstars[0] = (0, 0, led_bright)
         else:
-            funhouse.peripherals.dotstars[0] = (led_bright, led_bright, 0)
+            # GREEN
+            funhouse.peripherals.dotstars[0] = (0, led_bright, 0)
     elif parameter == "voc" and SGP30_PRESENT:
-        # dots[4] - VOC: color varies with level, blue - green - red
-        if measurement > VOC_HIGH:
+        if measurement == 0:
+            funhouse.peripherals.dotstars[1] = (led_bright, led_bright, 0)
+        elif measurement > VOC_RED:
             funhouse.peripherals.dotstars[1] = (led_bright, 0, 0)
-        elif measurement > VOC_LOW:
-            funhouse.peripherals.dotstars[1] = (0, led_bright, 0)
-        else:
+        elif measurement < VOC_BLUE:
             funhouse.peripherals.dotstars[1] = (0, 0, led_bright)
-    elif parameter == "temperature":
-        # dots[3] - temperature: blue   -   green   -   yellow
-        if measurement < TEMPERATURE_LOW:
-            funhouse.peripherals.dotstars[3] = (0, 0, led_bright)
-        elif measurement > TEMPERATURE_HIGH:
-            funhouse.peripherals.dotstars[3] = (led_bright, 0, 0)
         else:
+            # GREEN
+            funhouse.peripherals.dotstars[1] = (0, led_bright, 0)
+    elif parameter == "temperature":
+        if measurement == 0:
+            funhouse.peripherals.dotstars[3] = (led_bright, led_bright, 0)
+        elif measurement > TEMPERATURE_RED:
+            funhouse.peripherals.dotstars[3] = (led_bright, 0, 9)
+        elif measurement < TEMPERATURE_BLUE:
+            funhouse.peripherals.dotstars[3] = (0, 0, led_bright)
+        else:
+            # GREEN
             funhouse.peripherals.dotstars[3] = (0, led_bright, 0)
     elif parameter == "humidity":
-        # dots[1] - humidity: orange   -   green   -   red
-        if measurement < HUMIDITY_LOW:
-            funhouse.peripherals.dotstars[4] = (led_bright, led_dim, 0)
-        elif measurement > HUMIDITY_HIGH:
+        if measurement == 0:
+            funhouse.peripherals.dotstars[4] = (led_bright, led_bright, 0)
+        elif measurement > HUMIDITY_RED:
             funhouse.peripherals.dotstars[4] = (led_bright, 0, 0)
+        elif measurement < HUMIDITY_BLUE:
+            funhouse.peripherals.dotstars[4] = (0, 0, led_bright)
         else:
+            # GREEN
             funhouse.peripherals.dotstars[4] = (0, led_bright, 0)
     else:
-        print("set_dotstar parameter mismatch")
+        add_to_io_queue("set_dotstar parameter mismatch", True)
 
 
 def sensor_update(motion_detected, IO_update, save_sgp30_cals):
@@ -159,9 +157,9 @@ def sensor_update(motion_detected, IO_update, save_sgp30_cals):
     if SGP30_PRESENT:
         co2 = sgp30.eCO2
         voc = sgp30.TVOC
-        if ADJUST_RAW_VALUES:
-            # co2 = max(co2 * CO2_SCALE + CO2_OFFSET, 418)
-            voc = voc * VOC_SCALE + VOC_OFFSET
+        if not CALIBRATE:
+            co2 = CO2_M * co2 + CO2_B
+            voc = VOC_M * voc + VOC_B
         print("0 - CO2 " + str(co2))
         set_dotstar("co2", co2)
         print("1 - VOC " + str(voc))
@@ -175,10 +173,10 @@ def sensor_update(motion_detected, IO_update, save_sgp30_cals):
     temperature_f = (funhouse.peripherals.temperature * 9 / 5 + 32)
     rel_humidity = funhouse.peripherals.relative_humidity
     pressure_mb = funhouse.peripherals.pressure
-    if ADJUST_RAW_VALUES:
-        temperature_f = temperature_f * TEMPERATURE_SCALE + TEMPERATURE_OFFSET
-        rel_humidity = rel_humidity * HUMIDITY_SCALE + HUMIDITY_OFFSET
-        pressure_mb = pressure_mb + PRESSURE_OFFSET + PRESSURE_OFFSET
+    if not CALIBRATE:
+        temperature_f = TEMPERATURE_M * temperature_f + TEMPERATURE_B
+        rel_humidity = HUMIDITY_M * rel_humidity + HUMIDITY_B
+        pressure_mb = PRESSURE_M * pressure_mb + PRESSURE_B
 
     print("3 - Temperature %0.1F" % (temperature_f))
     set_dotstar("temperature", temperature_f)
@@ -195,12 +193,10 @@ def sensor_update(motion_detected, IO_update, save_sgp30_cals):
 
     # Turn on WiFi
     if IO_update:
-        funhouse.peripherals.led = True
         try:
             funhouse.network.enabled = True
             # Connect to WiFi
             funhouse.network.connect()
-            # Push to IO using REST
         except RuntimeError:
             add_to_io_queue("WiFi error - check secrets file!", True)
             # Turn off WiFi, but leave red led on to indicate IO error
@@ -208,6 +204,7 @@ def sensor_update(motion_detected, IO_update, save_sgp30_cals):
             funhouse.network.enabled = False
             return
         try:
+            # Push to IO using REST
             funhouse.push_to_io("temperature", temperature_f)
             funhouse.push_to_io("humidity", rel_humidity)
             funhouse.push_to_io("pressure", pressure_mb)
@@ -251,7 +248,6 @@ def sensor_update(motion_detected, IO_update, save_sgp30_cals):
             funhouse.network.enabled = False
             return
         # Turn off WiFi
-        funhouse.peripherals.led = False
         funhouse.network.enabled = False
         print("Push to IO complete")
 
@@ -266,7 +262,7 @@ IO_update_time = time.time() - IO_update_interval
 SGP30_cal_data_save_time = time.time() - SGP30_CAL_DATA_SAVE_INTERVAL
 
 PIR_motion_detected = 0
-print("Funhouse start up complete")
+add_to_io_queue("Funhouse start up complete", True)
 while True:
     # Monitor motion detection every loop
     if PIR_motion_detected == 0 and funhouse.peripherals.pir_sensor:
@@ -278,8 +274,17 @@ while True:
         else:
             funhouse.peripherals.dotstars[2] = (16, 16, 16)
 
-    # Read co2 sensor every loop - better results?
-    if SGP30_PRESENT:
+    if time.time() - IO_update_time > IO_update_interval:
+        if CALIBRATE and (time.time() - SGP30_cal_data_save_time > SGP30_CAL_DATA_SAVE_INTERVAL):
+            sensor_update(PIR_motion_detected, True, True)
+            SGP30_cal_data_save_time = time.time()
+        else:
+            sensor_update(PIR_motion_detected, True, False)
+        IO_update_time = time.time()
+        PIR_motion_detected = 0
+        funhouse.peripherals.dotstars[2] = (0, 0, 0)
+    elif SGP30_PRESENT:
+        # if we're not doing an IO update, Read co2 sensor every loop (for better results?)
         temp_co2 = sgp30.eCO2
         temp_voc = sgp30.TVOC
 
@@ -289,19 +294,6 @@ while True:
         funhouse.display.brightness = slider
         print("Slider changed to " + str(funhouse.display.brightness))
         sensor_update(PIR_motion_detected, False, False)
-    if time.time() - IO_update_time > IO_update_interval:
-        if SGP30_CALIBRATING and (time.time() - SGP30_cal_data_save_time > SGP30_CAL_DATA_SAVE_INTERVAL):
-            sensor_update(PIR_motion_detected, True, True)
-            SGP30_cal_data_save_time = time.time()
-        else:
-            sensor_update(PIR_motion_detected, True, False)
-        IO_update_time = time.time()
-        PIR_motion_detected = 0
-        funhouse.peripherals.dotstars[2] = (0, 0, 0)
-
-    funhouse.peripherals.led = False
-    funhouse.enter_light_sleep(sleep_interval)
-    funhouse.peripherals.led = True
 
     if funhouse.peripherals.button_up:
         # set to fast mode
@@ -312,7 +304,7 @@ while True:
         sensor_update(PIR_motion_detected, False, False)
         IO_update_time = time.time()
     elif funhouse.peripherals.button_down:
-        # set to slow mode
+        # set to normal mode
         IO_update_interval = NORMAL_IO_UPDATE_INTERVAL
         sleep_interval = NORMAL_SLEEP_INTERVAL
         funhouse.display.brightness = 0
@@ -327,3 +319,7 @@ while True:
         else:
             dark_limit = DARK_THRESHOLD
             print("night light mode on")
+
+    funhouse.peripherals.led = False
+    funhouse.enter_light_sleep(sleep_interval)
+    funhouse.peripherals.led = True
