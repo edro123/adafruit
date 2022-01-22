@@ -1,80 +1,106 @@
 # Adafruit Funhouse Air Quality Monitor
 
-This project builds an Air Quality Monitor using the Adafruit Funhouse microcontroller, an add on PIR sensor, and an SGP30 carbon dioxide / VOC sensor. The code will read each of the sensors, adjust them with predetermined calibration constants, print the values to the Funstar display, upload them Adafruit IO, and use the dotstars for status
+This project builds an Air Quality Monitor using the Adafruit Funhouse microcontroller, an add on PIR sensor, and an SGP30 carbon dioxide / VOC sensor. The code will read each of the sensors, adjust them with predetermined calibration constants, print the values to the Funstar display, upload them Adafruit IO, and uses the dotstars for status
 
-## Getting Started
+## Prerequisites
 
-These instructions will get you a copy of the project up and running on your local machine for development and testing purposes. See deployment for notes on how to deploy the project on a live system.
+### Hardware
+- Adafruit FunHouse - WiFi Home Automation Development Board (https://www.adafruit.com/product/4985)
+- Breadboard-friendly Mini PIR Motion Sensor with 3 Pin Header (https://www.adafruit.com/product/4871)
+- SGP30 Air Quality Sensor Breakout - VOC and eCO2 - STEMMA QT / Qwiic (https://www.adafruit.com/product/3709)
+- Adafruit FunHouse Mounting Plate and Yellow Brick Stand (https://www.adafruit.com/product/4962)
 
-### Prerequisites
+### Software
 
-What things you need to install the software and how to install them
+#### Setting up CircuitPython:
+Follow the steps on this page to install CircuitPython: https://learn.adafruit.com/adafruit-funhouse/circuitpython
 
-```
-Give examples
-```
+#### CircuitPython libraries:
+The CircuitPython Libraries required for this project are:
 
-### Installing
+Library | Source
+---------|----------
+adafruit_ahtx0.mpy | https://circuitpython.org/libraries
+adafruit_bitmap_font | https://circuitpython.org/libraries
+adafruit_bus_device |https://circuitpython.org/libraries
+adafruit_display_text | https://circuitpython.org/librarie
+adafruit_dotstar.mpy | https://circuitpython.org/libraries
+adafruit_dps310.mpy | https://circuitpython.org/libraries
+adafruit_fakerequests.mpy | https://circuitpython.org/libraries
+adafruit_funhouse | https://circuitpython.org/libraries
+adafruit_io | https://circuitpython.org/libraries
+adafruit_minimqtt | https://circuitpython.org/libraries
+adafruit_portalbase | https://circuitpython.org/libraries
+adafruit_register | https://circuitpython.org/libraries
+adafruit_requests.mpy | https://circuitpython.org/libraries
+adafruit_sgp30.mpy | https://github.com/adafruit/Adafruit_CircuitPython_SGP30/releases
+simpleio.mpy | https://circuitpython.org/libraries
 
-A step by step series of examples that tell you how to get a development env running
+#### Source Code
+Available on github at: https://github.com/edro123/adafruit
 
-Say what the step will be
+#### Project bundle
+You can also install the source code and libraries as a bundle. Download funhouse_aqm_bundle.zip from xxx.
 
-```
-Give the example
-```
+#### Factory reset:
+The Adafruit Funhouse comes with an Arduino Self Test Example pre-loaded. You  can reload it by following the examples at this link: https://learn.adafruit.com/adafruit-funhouse/factory-reset
 
-And repeat
+### Adafruit IO setup
+#### Set up feeds
+#### Set up the dashboard
 
-```
-until finished
-```
+## Operation:
+### Initialization:
+#### Tests for presence of SGP30 and ignores if not present
 
-End with an example of getting some data out of the system or using it for a little demo
+### Calibrate mode:
+#### On start up: hold down sel button to put into calibrate mode
+#### Output sensor values will be raw, not adjusted
+#### SGP30 will not have initialization values loaded. Initialization values will be read and uploaded to IO hourly
 
-## Running the tests
+### While running:
 
-Explain how to run the automated tests for this system
+#### Exceptions should handle network errors
 
-### Break down into end to end tests
+#### Sensor values are printed to the TFT display and posted to IO feeds:
 
-Explain what these tests test and why
+Sensor| Feed Name | Dotstar LED
+---------|----------|---------
+CO2 (sgp30) | c02 | 0, low-normal-high / blue-green-red
+TVOC (sgp30) | voc | 1, low-normal-high / blue-green-red
+PIR | pir | 2, white only
+temperature | temperature | 3, low-normal-high / blue-green-red
+humidity | humidity | 4, low-normal-high / blue-green-red
+barometric pressure | pressure | n/a
+light level | lightlevel | n/a
+cpu temperature | cputemp | n/a
 
-```
-Give an example
-```
+Also posts some system status info to the IO text feed
 
-### And coding style tests
+If not in calibrate mode, raw sensor readings are adjusted. A linear regression was used offline to calibrate the reading and generate slope and intercept values used in the code. Your sensors will likely require your own calibration efforts.
 
-Explain what these tests test and why
+Use the slider control to vary brightness. Note: this will not work very well in slow update mode
 
-```
-Give an example
-```
+Hold the up button to shift to fast mode
+    Forces IO update when pressed
+    Sets brightness to 0.25
+    Faster updates
 
-## Deployment
+Hold down button to shift to low power
+    Forces an IO update when pressed
+    Sets brightness to zero
+    slower updates
 
-Add additional notes about how to deploy this on a live system
+Night light mode:
+    The PIR motion sensor can trigger the LEDs to act as a night light.
+    Only works if the display brightness is zero.
+    Can be toggled while running with the select switch.
 
-## Built With
+The Funhouse red led is on when code is executing, off when sleeping
 
-* [Dropwizard](http://www.dropwizard.io/1.0.2/docs/) - The web framework used
-* [Maven](https://maven.apache.org/) - Dependency Management
-* [ROME](https://rometools.github.io/rome/) - Used to generate RSS Feeds
+## Version: 0.1
 
-## Contributing
-
-Please read [CONTRIBUTING.md](https://gist.github.com/PurpleBooth/b24679402957c63ec426) for details on our code of conduct, and the process for submitting pull requests to us.
-
-## Versioning
-
-We use [SemVer](http://semver.org/) for versioning. For the versions available, see the [tags on this repository](https://github.com/your/project/tags). 
-
-## Authors
-
-* **Billie Thompson** - *Initial work* - [PurpleBooth](https://github.com/PurpleBooth)
-
-See also the list of [contributors](https://github.com/your/project/contributors) who participated in this project.
+## Author: Ed Rosack - (https://github.com/edro123/)
 
 ## License
 
@@ -82,62 +108,24 @@ This project is licensed under the MIT License - see the [LICENSE.md](LICENSE.md
 
 ## Acknowledgments
 
-* Hat tip to anyone whose code was used
-* Inspiration
-* etc
+* Many thanks to Adafruit for their documentation and sample code
+
+## References
+* Funhouse overview: https://learn.adafruit.com/adafruit-funhouse
+* Guides for product: Adafruit FunHouse: https://learn.adafruit.com/products/4985/guides
+* Funhouse Library: https://circuitpython.readthedocs.io/projects/funhouse/en/latest/
+* Creating FunHouse Projects with CircuitPython: https://learn.adafruit.com/creating-funhouse-projects-with-circuitpython/code-examples
+* Adafruit SGP30 Library: https://circuitpython.readthedocs.io/projects/sgp30/en/2.3.5/api.html
+* Adafruit SGP30 TVOC/eCO2 Gas Sensor Overview: https://learn.adafruit.com/adafruit-sgp30-gas-tvoc-eco2-mox-sensor
+* Sensirion SGP30 datasheet: https://sensirion.com/media/documents/984E0DD5/61644B8B/Sensirion_Gas_Sensors_Datasheet_SGP30.pdf
 
 
 
 
 
-# adafruit Funhouse Air Quality Monitor
 
-### Project Description
 
-Sample built in and add on sensors, print values, upload to Adafruit IO, use dotstars for status
 
-### Prerequisites
 
-### Installing
 
-### Processing
 
-On start up: hold down sel button to calibrate
-    cal mode operates normally, except will add cal readings hourly IO text feed 
-    exception handles absense of SGP30 add on board
-
-While running:
-    expceptions handle network errors and solid red led indicates error
-
-    sensor values posted to IO feeds:
-        eCO2 (sgp30)
-        humidity (internal)
-        PIR (add on)
-        temperature (internal)
-        TVOC (sgp30)
-        barometric pressure (internal)
-        light level (internal)
-        cpu temperature (internal)
-    
-    Also post system info text feed to IO
-    
-    Dotstar colors indicate reading levels for some sensors: controlled by constants
-        eCO2
-        humidity
-        PIR
-        temperature
-        TVOC
-    
-    Raw sensor readings are adjusted with slope and intercept values determined with an offline linear regression
-    
-    Slider controls brightness (not very well in low power mode)
-    
-    Hold up button to shift to fast mode
-        Forces IO update when pressed
-        Faster updates
-    
-    Hold down button to shift to low power
-        Forces an IO update when pressed
-        slower updates
-
-### Acknowledgements
