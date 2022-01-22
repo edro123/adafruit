@@ -208,5 +208,10 @@ Specifications:
     [] Add calvin jpg background?
     [] Format readme
     [] decide on file writes. would need for fully auto re-cal w/o internet
-    [] Can LED brightness control be re-factored?
+            Normally the file system is read only. See this link:
+            https://learn.adafruit.com/cpu-temperature-logging-with-circuit-python/writing-to-the-filesystem
+            with open("sgp30_cal_data.txt", "a") as f:
+                f.write(co2_base_string)
+                f.write(tvoc_base_string)
+       [] Can LED brightness control be re-factored?
 

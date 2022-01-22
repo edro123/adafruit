@@ -150,7 +150,7 @@ def set_dotstar(parameter, measurement):
         add_to_io_queue("set_dotstar parameter mismatch", True)
 
 
-def sensor_update(motion_detected, IO_update, save_sgp30_cals):
+def sensor_update(motion_detected, io_update, save_sgp30_cals):
     global io_queue
     print("---------------------")
 
@@ -192,7 +192,7 @@ def sensor_update(motion_detected, IO_update, save_sgp30_cals):
     print("x - CPU temperature " + str(cpu_temp_f))
 
     # Turn on WiFi
-    if IO_update:
+    if io_update:
         try:
             funhouse.network.enabled = True
             # Connect to WiFi
@@ -220,13 +220,6 @@ def sensor_update(motion_detected, IO_update, save_sgp30_cals):
                     tvoc_base_string = "tvoc_base: " + str(tvoc_base)
                     funhouse.push_to_io("text", tvoc_base_string)
                     print(tvoc_base_string)
-                    """
-                    Normally the file system is read only. See this link:
-                    https://learn.adafruit.com/cpu-temperature-logging-with-circuit-python/writing-to-the-filesystem
-                    with open("sgp30_cal_data.txt", "a") as f:
-                        f.write(co2_base_string)
-                        f.write(tvoc_base_string)
-                    """
             else:
                 funhouse.push_to_io("co2", 0)
                 funhouse.push_to_io("voc", 0)
@@ -253,12 +246,12 @@ def sensor_update(motion_detected, IO_update, save_sgp30_cals):
 
 
 # Start up with normal constants
-IO_update_interval = NORMAL_IO_UPDATE_INTERVAL
+io_update_interval = NORMAL_IO_UPDATE_INTERVAL
 sleep_interval = NORMAL_SLEEP_INTERVAL
 funhouse.display.brightness = 0.25
 dark_limit = DARK_THRESHOLD
 
-IO_update_time = time.time() - IO_update_interval
+io_update_time = time.time() - io_update_interval
 SGP30_cal_data_save_time = time.time() - SGP30_CAL_DATA_SAVE_INTERVAL
 
 PIR_motion_detected = 0
@@ -274,13 +267,13 @@ while True:
         else:
             funhouse.peripherals.dotstars[2] = (16, 16, 16)
 
-    if time.time() - IO_update_time > IO_update_interval:
+    if time.time() - io_update_time > io_update_interval:
         if CALIBRATE and (time.time() - SGP30_cal_data_save_time > SGP30_CAL_DATA_SAVE_INTERVAL):
             sensor_update(PIR_motion_detected, True, True)
             SGP30_cal_data_save_time = time.time()
         else:
             sensor_update(PIR_motion_detected, True, False)
-        IO_update_time = time.time()
+        io_update_time = time.time()
         PIR_motion_detected = 0
         funhouse.peripherals.dotstars[2] = (0, 0, 0)
     elif SGP30_PRESENT:
@@ -297,20 +290,20 @@ while True:
 
     if funhouse.peripherals.button_up:
         # set to fast mode
-        IO_update_interval = FAST_IO_UPDATE_INTERVAL
+        io_update_interval = FAST_IO_UPDATE_INTERVAL
         sleep_interval = FAST_SLEEP_INTERVAL
         funhouse.display.brightness = 0.25
         add_to_io_queue("Switch to fast updates", True)
         sensor_update(PIR_motion_detected, False, False)
-        IO_update_time = time.time()
+        io_update_time = time.time()
     elif funhouse.peripherals.button_down:
         # set to normal mode
-        IO_update_interval = NORMAL_IO_UPDATE_INTERVAL
+        io_update_interval = NORMAL_IO_UPDATE_INTERVAL
         sleep_interval = NORMAL_SLEEP_INTERVAL
         funhouse.display.brightness = 0
         add_to_io_queue("Switch to normal updates", True)
         sensor_update(PIR_motion_detected, True, False)
-        IO_update_time = time.time()
+        io_update_time = time.time()
     elif funhouse.peripherals.button_sel:
         # Toggle nightlight mode (dark_limit)
         if dark_limit == DARK_THRESHOLD:
