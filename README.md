@@ -1,6 +1,6 @@
 # Adafruit Funhouse Air Quality Monitor
 
-This project builds an Air Quality Monitor using the Adafruit Funhouse microcontroller, an add on PIR sensor, and an SGP30 carbon dioxide / VOC sensor. The code will read each of the built in and add on sensors, adjust them with predetermined calibration constants, print the values to the Funstar display, upload them Adafruit IO, and use the dotstars for status
+This project builds an Air Quality Monitor using the Adafruit Funhouse microcontroller, an add on PIR sensor, and an SGP30 carbon dioxide / VOC sensor. The code will read each of the sensors, adjust them with predetermined calibration constants, print the values to the Funstar display, upload them Adafruit IO, and use the dotstars for status
 
 ## Getting Started
 
