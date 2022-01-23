@@ -83,30 +83,31 @@ light level | lightlevel | n/a | n/a | n/a  | n/a | n/a
 cpu temperature | cputemp | n/a | n/a | n/a  | n/a | n/a 
 System messages | text | n/a | n/a  | n/a | n/a 
 
-If in calibrate mode, raw sensor readings are recorded. If not, they're adjusted with a linear regression that was developed offline to calibrate the readings to know references. The linear regression slope and intercept values that used in the source code  will likely require revision for your own sensors.
+If in calibrate mode, raw sensor readings are recorded. If not, they're adjusted with a linear regression that was developed offline to calibrate the readings to know references. The linear regression slope and intercept values that used in the source code  will likely require revision for your own sensors. An example regression:
 
+<img src="./CO2%20regression.jpg" alt="co2 regression" style="height: 534px; width:1024px;"/>
 
+#### Controls
+Use the slider control to vary brightness. Note: this will not work very well in normal  update mode
 
-Use the slider control to vary brightness. Note: this will not work very well in slow update mode
+Hold the up button to shift to fast mode:
+- Forces IO update when pressed
+- Sets brightness to 0.25
+- Faster updates
 
-Hold the up button to shift to fast mode
-    Forces IO update when pressed
-    Sets brightness to 0.25
-    Faster updates
-
-Hold down button to shift to normal mode
-    Forces an IO update when pressed
-    Sets brightness to zero
-    slower updates
+Hold down button to shift to normal mode:
+- Forces an IO update when pressed
+- Sets brightness to zero
+- slower updates
 
 Night light mode:
-    The PIR motion sensor can trigger the LEDs to act as a night light.
-    Only works if the display brightness is zero.
-    Can be toggled while running with the select switch.
+- The PIR motion sensor can trigger the LEDs to act as a night light.
+- Only works if the display brightness is zero.
+- Can be toggled while running with the select switch.
 
 The Funhouse red led is on when code is executing, off when sleeping
 
-## Version: 
+## Version:
 0.1 - released 1/31/22
 
 ## Author: 
