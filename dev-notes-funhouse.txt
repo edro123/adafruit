@@ -196,13 +196,15 @@ Specifications:
     [x] revised print / add_to_io_feed
 1/20/22
     co2 sensor went squirelly. Better after reboot
-    
+1/23/22
+    [x] use select button to toggle night light mode?
+    [x] redo calibration and adjustments: they aren't very close
+    [x] Get SGP serial number into IO text feed?
+    [x] Updating readme
+    [x] added generic secrets.py to git
 
-    [] use select button to toggle night light mode?
     [] make PIR motion a boolean?
-    [] redo calibration and adjustments: they aren't very close
     [] change barometer to value - rising / falling?
-    [] Get SGP serial number into IO text feed?
     [] Access the cpu temp and model a dynamic offset?
 
     [] Add calvin jpg background?
@@ -213,5 +215,5 @@ Specifications:
             with open("sgp30_cal_data.txt", "a") as f:
                 f.write(co2_base_string)
                 f.write(tvoc_base_string)
-       [] Can LED brightness control be re-factored?
+    [] Can LED brightness control be re-factored?
 

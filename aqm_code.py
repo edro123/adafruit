@@ -1,3 +1,4 @@
+# pylint: disable=missing-function-docstring, invalid-name, global-statement
 """
 This code was intiially based on an adafruit example:
 https://learn.adafruit.com/creating-funhouse-projects-with-circuitpython/temperature-logger-example
@@ -53,53 +54,6 @@ CO2_RED = 2500
 VOC_BLUE = 200
 # VOC GREEN 200 - 2500
 VOC_RED = 2500
-
-io_queue = ""
-
-
-def add_to_io_queue(message, print_it_too):
-    global io_queue
-    # if io_queue is not empty: add a new line
-    io_queue = message if io_queue == "" else io_queue + "\n" + message
-    if print_it_too:
-        print(message)
-
-
-funhouse = FunHouse(default_bg=None)
-
-# If the select button is pressed on start up, enter calibration mode and use raw sensor values
-if funhouse.peripherals.button_sel:
-    CALIBRATE = True
-    add_to_io_queue("Select pressed on startup - calibration mode.", True)
-else:
-    CALIBRATE = False
-
-# Initialize the SGP 30 VOC/CO2 board
-# See this link for how to handle the i2c bus on the funhouse board:
-# https://circuitpython.readthedocs.io/projects/funhouse/en/latest/
-try:
-    i2c = board.I2C()
-    sgp30 = adafruit_sgp30.Adafruit_SGP30(i2c)
-    print("SGP30 serial #", [hex(i) for i in sgp30.serial])
-    sgp30.iaq_init()
-
-    if CALIBRATE:
-        add_to_io_queue("SGP30 present - calibration mode.", True)
-    else:
-        # load baseline calibration data (eCO2, TVOC)
-        # factory numbers: sgp30.set_iaq_baseline(0x8973, 0x8AAE)
-        # 1/10/22 indoor / outdoor: sgp30.set_iaq_baseline(0x8DFC, 0x91EE)
-        # 1/11/22 outdoor:
-        sgp30.set_iaq_baseline(0x9872, 0x98D7)
-        add_to_io_queue("SGP30 Present - initialized.", True)
-    SGP30_PRESENT = True
-except RuntimeError:
-    add_to_io_queue("SGP30 initializing error: do not use.", True)
-    SGP30_PRESENT = False
-
-# Turn things off
-funhouse.peripherals.dotstars.fill(0)
-funhouse.network.enabled = False
 
 
 def set_dotstar(parameter, measurement):
@@ -244,6 +198,50 @@ def sensor_update(motion_detected, io_update, save_sgp30_cals):
         funhouse.network.enabled = False
         print("Push to IO complete")
 
+io_queue = ""
+def add_to_io_queue(message, print_it_too):
+    global io_queue
+    # if io_queue is not empty: add a new line
+    io_queue = message if io_queue == "" else io_queue + "\n" + message
+    if print_it_too:
+        print(message)
+
+
+funhouse = FunHouse(default_bg=None)
+# If the select button is pressed on start up, enter calibration mode and use raw sensor values
+if funhouse.peripherals.button_sel:
+    CALIBRATE = True
+    add_to_io_queue("Select pressed on startup - calibration mode.", True)
+else:
+    CALIBRATE = False
+
+# Initialize the SGP 30 VOC/CO2 board
+# See this link for how to handle the i2c bus on the funhouse board:
+# https://circuitpython.readthedocs.io/projects/funhouse/en/latest/
+try:
+    i2c = board.I2C()
+    sgp30 = adafruit_sgp30.Adafruit_SGP30(i2c)
+    serial_number = "SGP30 serial #:" + str([hex(i) for i in sgp30.serial])
+    add_to_io_queue(serial_number, True)
+    sgp30.iaq_init()
+
+    if CALIBRATE:
+        add_to_io_queue("SGP30 - calibration mode.", True)
+    else:
+        # load baseline calibration data (eCO2, TVOC)
+        # factory numbers: sgp30.set_iaq_baseline(0x8973, 0x8AAE)
+        # 1/10/22 indoor / outdoor: sgp30.set_iaq_baseline(0x8DFC, 0x91EE)
+        # 1/11/22 outdoor:
+        sgp30.set_iaq_baseline(0x9872, 0x98D7)
+        add_to_io_queue("SGP30 - initialized.", True)
+    SGP30_PRESENT = True
+except RuntimeError:
+    add_to_io_queue("SGP30 initializing error: do not use.", True)
+    SGP30_PRESENT = False
+
+# Turn things off
+funhouse.peripherals.dotstars.fill(0)
+funhouse.network.enabled = False
 
 # Start up with normal constants
 io_update_interval = NORMAL_IO_UPDATE_INTERVAL
@@ -252,14 +250,14 @@ funhouse.display.brightness = 0.25
 dark_limit = DARK_THRESHOLD
 
 io_update_time = time.time() - io_update_interval
-SGP30_cal_data_save_time = time.time() - SGP30_CAL_DATA_SAVE_INTERVAL
+sgp30_cal_data_save_time = time.time() - SGP30_CAL_DATA_SAVE_INTERVAL
 
-PIR_motion_detected = 0
+pir_motion_detected = 0
 add_to_io_queue("Funhouse start up complete", True)
 while True:
     # Monitor motion detection every loop
-    if PIR_motion_detected == 0 and funhouse.peripherals.pir_sensor:
-        PIR_motion_detected = 1
+    if pir_motion_detected == 0 and funhouse.peripherals.pir_sensor:
+        pir_motion_detected = 1
         print("PIR Motion detected!")
         if (funhouse.display.brightness == 0 and funhouse.peripherals.light < dark_limit):
             # Night light mode
@@ -268,13 +266,13 @@ while True:
             funhouse.peripherals.dotstars[2] = (16, 16, 16)
 
     if time.time() - io_update_time > io_update_interval:
-        if CALIBRATE and (time.time() - SGP30_cal_data_save_time > SGP30_CAL_DATA_SAVE_INTERVAL):
-            sensor_update(PIR_motion_detected, True, True)
-            SGP30_cal_data_save_time = time.time()
+        if CALIBRATE and (time.time() - sgp30_cal_data_save_time > SGP30_CAL_DATA_SAVE_INTERVAL):
+            sensor_update(pir_motion_detected, True, True)
+            sgp30_cal_data_save_time = time.time()
         else:
-            sensor_update(PIR_motion_detected, True, False)
+            sensor_update(pir_motion_detected, True, False)
         io_update_time = time.time()
-        PIR_motion_detected = 0
+        pir_motion_detected = 0
         funhouse.peripherals.dotstars[2] = (0, 0, 0)
     elif SGP30_PRESENT:
         # if we're not doing an IO update, Read co2 sensor every loop (for better results?)
@@ -286,7 +284,7 @@ while True:
     if slider is not None:
         funhouse.display.brightness = slider
         print("Slider changed to " + str(funhouse.display.brightness))
-        sensor_update(PIR_motion_detected, False, False)
+        sensor_update(pir_motion_detected, False, False)
 
     if funhouse.peripherals.button_up:
         # set to fast mode
@@ -294,7 +292,7 @@ while True:
         sleep_interval = FAST_SLEEP_INTERVAL
         funhouse.display.brightness = 0.25
         add_to_io_queue("Switch to fast updates", True)
-        sensor_update(PIR_motion_detected, False, False)
+        sensor_update(pir_motion_detected, False, False)
         io_update_time = time.time()
     elif funhouse.peripherals.button_down:
         # set to normal mode
@@ -302,7 +300,7 @@ while True:
         sleep_interval = NORMAL_SLEEP_INTERVAL
         funhouse.display.brightness = 0
         add_to_io_queue("Switch to normal updates", True)
-        sensor_update(PIR_motion_detected, True, False)
+        sensor_update(pir_motion_detected, True, False)
         io_update_time = time.time()
     elif funhouse.peripherals.button_sel:
         # Toggle nightlight mode (dark_limit)
