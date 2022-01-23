@@ -85,7 +85,7 @@ System messages | text | n/a | n/a  | n/a | n/a
 
 If in calibrate mode, raw sensor readings are recorded. If not, they're adjusted with a linear regression that was developed offline to calibrate the readings to know references. The linear regression slope and intercept values that used in the source code  will likely require revision for your own sensors. An example regression:
 
-<img src="./CO2%20regression.jpg" alt="co2 regression" style="height: 534px; width:1024px;"/>
+<img src="./co2-regression.jpg" alt="co2 regression" style="height: 534px; width:1024px;"/>
 
 #### Controls
 Use the slider control to vary brightness. Note: this will not work very well in normal  update mode

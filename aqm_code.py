@@ -152,6 +152,7 @@ def sensor_update(motion_detected, io_update, save_sgp30_cals):
             # Connect to WiFi
             funhouse.network.connect()
         except RuntimeError:
+            funhouse.peripherals.play_tone(1333, 0.25)
             add_to_io_queue("WiFi error - check secrets file!", True)
             # Turn off WiFi, but leave red led on to indicate IO error
             # funhouse.peripherals.led = False
@@ -186,9 +187,11 @@ def sensor_update(motion_detected, io_update, save_sgp30_cals):
                 try:
                     funhouse.push_to_io("text", io_queue)
                 except RuntimeError:
+                    funhouse.peripherals.play_tone(1666, 0.25)
                     print("Error pushing IO text")
                 io_queue = ""
         except RuntimeError:
+            funhouse.peripherals.play_tone(2000, 0.25)
             add_to_io_queue("IO connect error - check secrets file!", True)
             # Turn off WiFi, but leave red led on to indicate IO error
             # funhouse.peripherals.led = False
@@ -236,6 +239,7 @@ try:
         add_to_io_queue("SGP30 - initialized.", True)
     SGP30_PRESENT = True
 except RuntimeError:
+    funhouse.peripherals.play_tone(1000, 0.25)
     add_to_io_queue("SGP30 initializing error: do not use.", True)
     SGP30_PRESENT = False
 
