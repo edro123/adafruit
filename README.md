@@ -1,5 +1,7 @@
 # Adafruit Funhouse Air Quality Monitor
 
+<img src="./funhouse-aqm.jpg" alt="Funhouse AQM" style="height: 534px; width:1024px;"/>
+
 This Air Quality Monitor is built using the Adafruit Funhouse microcontroller, an add on PIR sensor, and an SGP30 carbon dioxide / VOC sensor. The code will read each of the sensors, adjust them with predetermined calibration constants, print the values to the Funhouse display, upload them to Adafruit IO, and uses the dotstars for status
 
 ## Prerequisites
@@ -51,9 +53,11 @@ The Adafruit Funhouse comes with an Arduino Self Test example pre-loaded. You ca
 To use Adafruit IO, you'll need to sign up for an account at https://io.adafruit.com. There are free and paid versions. This project can use the free tier.
 
 #### Feeds
+<img src="./feeds.jpg" alt="IO feeds" style="height: 588px; width:1008px;"/>
 Once youf're signed up, create a set of feeds to match the feed names for each sensor  listed in the table below.
 
 #### Dashboard
+<img src="./dashboard.jpg" alt="Dashboard" style="height: 709px; width:1008px;"/>
 Once your feeds are set up, add them to a Dashboard. You can set up warning values to match the red-green-blue alerts in the code.
 
 ## Operation:
