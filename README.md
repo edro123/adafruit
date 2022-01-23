@@ -1,23 +1,22 @@
 # Adafruit Funhouse Air Quality Monitor
 
-This project builds an Air Quality Monitor using the Adafruit Funhouse microcontroller, an add on PIR sensor, and an SGP30 carbon dioxide / VOC sensor. The code will read each of the sensors, adjust them with predetermined calibration constants, print the values to the Funstar display, upload them Adafruit IO, and uses the dotstars for status
+This Air Quality Monitor is built using the Adafruit Funhouse microcontroller, an add on PIR sensor, and an SGP30 carbon dioxide / VOC sensor. The code will read each of the sensors, adjust them with predetermined calibration constants, print the values to the Funhouse display, upload them to Adafruit IO, and uses the dotstars for status
 
 ## Prerequisites
 
 ### Hardware
 - Adafruit FunHouse - WiFi Home Automation Development Board (https://www.adafruit.com/product/4985)
-- Breadboard-friendly Mini PIR Motion Sensor with 3 Pin Header (https://www.adafruit.com/product/4871)
-- SGP30 Air Quality Sensor Breakout - VOC and eCO2 - STEMMA QT / Qwiic (https://www.adafruit.com/product/3709)
-- Adafruit FunHouse Mounting Plate and Yellow Brick Stand (https://www.adafruit.com/product/4962)
+- (option) Breadboard-friendly Mini PIR Motion Sensor with 3 Pin Header (https://www.adafruit.com/product/4871)
+- (option) SGP30 Air Quality Sensor Breakout - VOC and eCO2 - STEMMA QT / Qwiic (https://www.adafruit.com/product/3709)
+- (option) Adafruit FunHouse Mounting Plate and Yellow Brick Stand (https://www.adafruit.com/product/4962)
 
 ### Software
 
 #### Setting up CircuitPython:
-Follow the steps on this page to install CircuitPython: https://learn.adafruit.com/adafruit-funhouse/circuitpython
+Follow the steps on Adafruit's page to install CircuitPython: https://learn.adafruit.com/adafruit-funhouse/circuitpython
 
-#### CircuitPython libraries:
-The CircuitPython Libraries required for this project are:
-
+#### Installing required CircuitPython libraries:
+CircuitPython Libraries required for this project and their source / locations are:
 Library | Source
 ---------|----------
 adafruit_ahtx0.mpy | https://circuitpython.org/libraries
@@ -37,17 +36,25 @@ adafruit_sgp30.mpy | https://github.com/adafruit/Adafruit_CircuitPython_SGP30/re
 simpleio.mpy | https://circuitpython.org/libraries
 
 #### Source Code
-Available on github at: https://github.com/edro123/adafruit
+the source code (aqm_code.py) is available on github at: https://github.com/edro123/adafruit
+
+#### Secrets file
+You will need to edit a secrets.py file to input your information for wifi, Adafruit IO, and timezone.
 
 #### Project bundle
-You can also install the source code and libraries as a bundle. Download funhouse_aqm_bundle.zip from xxx.
+You can install the source code and libraries as a bundle. Download funhouse_aqm_bundle.zip from xxx. unzip it and copy it to the device.
 
 #### Factory reset:
-The Adafruit Funhouse comes with an Arduino Self Test Example pre-loaded. You  can reload it by following the examples at this link: https://learn.adafruit.com/adafruit-funhouse/factory-reset
+The Adafruit Funhouse comes with an Arduino Self Test example pre-loaded. You can reload it by following the instructions at this link: https://learn.adafruit.com/adafruit-funhouse/factory-reset
 
-### Adafruit IO setup
-#### Set up feeds
-#### Set up the dashboard
+### Adafruit IO
+To use Adafruit IO, you'll need to sign up for an account at https://io.adafruit.com. There are free and paid versions. This project can use the free tier.
+
+#### Feeds
+Once youf're signed up, create a set of feeds to match the feed names for each sensor  listed in the table below.
+
+#### Dashboard
+Once your feeds are set up, add them to a Dashboard. You can set up warning values to match the red-green-blue alerts in the code.
 
 ## Operation:
 ### Initialization:
@@ -62,22 +69,23 @@ The Adafruit Funhouse comes with an Arduino Self Test Example pre-loaded. You  c
 
 #### Exceptions should handle network errors
 
-#### Sensor values are printed to the TFT display and posted to IO feeds:
+#### Sensor values are printed to the TFT display and posted to IO feeds. The dotstar LEDs are also used for status for a subset of the sensors. System messages are also sent to the text feed
 
-Sensor| Feed Name | Dotstar LED
----------|----------|---------
-CO2 (sgp30) | c02 | 0, low-normal-high / blue-green-red
-TVOC (sgp30) | voc | 1, low-normal-high / blue-green-red
-PIR | pir | 2, white only
-temperature | temperature | 3, low-normal-high / blue-green-red
-humidity | humidity | 4, low-normal-high / blue-green-red
-barometric pressure | pressure | n/a
-light level | lightlevel | n/a
-cpu temperature | cputemp | n/a
+Sensor| Feed Name | LED | Blue | Green | Red
+---------|----------|---------|---------|---------|---------
+CO2 (sgp30) | c02 | 0 | <800 | between | >2500
+TVOC (sgp30) | voc | 1 | <200 | between | >2500
+PIR | pir | 2 | white only
+temperature | temperature | 3 | <62 | between | >80
+humidity | humidity | 4 |  <42 | between | >53
+barometric pressure | pressure | n/a | n/a  | n/a | n/a 
+light level | lightlevel | n/a | n/a | n/a  | n/a | n/a 
+cpu temperature | cputemp | n/a | n/a | n/a  | n/a | n/a 
+System messages | text | n/a | n/a  | n/a | n/a 
 
-Also posts some system status info to the IO text feed
+If in calibrate mode, raw sensor readings are recorded. If not, they're adjusted with a linear regression that was developed offline to calibrate the readings to know references. The linear regression slope and intercept values that used in the source code  will likely require revision for your own sensors.
 
-If not in calibrate mode, raw sensor readings are adjusted. A linear regression was used offline to calibrate the reading and generate slope and intercept values used in the code. Your sensors will likely require your own calibration efforts.
+
 
 Use the slider control to vary brightness. Note: this will not work very well in slow update mode
 
@@ -86,7 +94,7 @@ Hold the up button to shift to fast mode
     Sets brightness to 0.25
     Faster updates
 
-Hold down button to shift to low power
+Hold down button to shift to normal mode
     Forces an IO update when pressed
     Sets brightness to zero
     slower updates
@@ -98,9 +106,11 @@ Night light mode:
 
 The Funhouse red led is on when code is executing, off when sleeping
 
-## Version: 0.1
+## Version: 
+0.1 - released 1/31/22
 
-## Author: Ed Rosack - (https://github.com/edro123/)
+## Author: 
+Ed Rosack - (https://github.com/edro123/)
 
 ## License
 
