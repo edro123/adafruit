@@ -2,15 +2,15 @@
 
 <img src="./funhouse-aqm.jpg" alt="Funhouse AQM" style="height: 534px; width:1024px;"/>
 
-This Air Quality Monitor is built using the Adafruit Funhouse microcontroller, an add on PIR sensor, and an SGP30 carbon dioxide / VOC sensor. The code will read each of the sensors, adjust them with predetermined calibration constants, print the values to the Funhouse display, upload them to Adafruit IO, and uses the dotstars for status
+This Air Quality Monitor is built using the Adafruit Funhouse microcontroller, an add on PIR sensor, and an SGP30 carbon dioxide / VOC sensor. The code reads each of the sensors, adjusts them with predetermined calibration constants, prints the values to the Funhouse display, uploads them to Adafruit IO, and uses the dotstars to indicate status
 
 ## Prerequisites
 
 ### Hardware
 - Adafruit FunHouse - WiFi Home Automation Development Board (https://www.adafruit.com/product/4985)
-- (option) Breadboard-friendly Mini PIR Motion Sensor with 3 Pin Header (https://www.adafruit.com/product/4871)
-- (option) SGP30 Air Quality Sensor Breakout - VOC and eCO2 - STEMMA QT / Qwiic (https://www.adafruit.com/product/3709)
-- (option) Adafruit FunHouse Mounting Plate and Yellow Brick Stand (https://www.adafruit.com/product/4962)
+- Breadboard-friendly Mini PIR Motion Sensor with 3 Pin Header (https://www.adafruit.com/product/4871). This is optional - the program will run without this component and report no motion detected.
+- SGP30 Air Quality Sensor Breakout - VOC and eCO2 - STEMMA QT / Qwiic (https://www.adafruit.com/product/3709). This is optional - the program will run without this component and bypass all co2 and voc measurements.
+- Adafruit FunHouse Mounting Plate and Yellow Brick Stand (https://www.adafruit.com/product/4962). This is an optional way to stand up the Funhouse.
 
 ### Software
 
@@ -38,16 +38,13 @@ adafruit_sgp30.mpy | https://github.com/adafruit/Adafruit_CircuitPython_SGP30/re
 simpleio.mpy | https://circuitpython.org/libraries
 
 #### Source Code
-the source code (aqm_code.py) is available on github at: https://github.com/edro123/adafruit
+The source code (aqm_code.py) is available on github at: https://github.com/edro123/adafruit. Make sure you have CircuitPython installed and the required libraries copied to the /lib folder on the board.  Then rename "aqm_code.py" to "code.py" and copy it to the board.
 
 #### Secrets file
-You will need to edit a secrets.py file to input your information for wifi, Adafruit IO, and timezone.
+You will need to edit the secrets.py file to input your information for wifi, Adafruit IO, and timezone. Copy the edited file to the board too.
 
 #### Project bundle
 You can install the source code and libraries as a bundle. Download funhouse_aqm_bundle.zip from xxx. unzip it and copy it to the device.
-
-#### Factory reset:
-The Adafruit Funhouse comes with an Arduino Self Test example pre-loaded. You can reload it by following the instructions at this link: https://learn.adafruit.com/adafruit-funhouse/factory-reset
 
 ### Adafruit IO
 To use Adafruit IO, you'll need to sign up for an account at https://io.adafruit.com. There are free and paid versions. This project can use the free tier.
@@ -60,20 +57,21 @@ Once youf're signed up, create a set of feeds to match the feed names for each s
 <img src="./dashboard.jpg" alt="Dashboard" style="height: 709px; width:1008px;"/>
 Once your feeds are set up, add them to a Dashboard. You can set up warning values to match the red-green-blue alerts in the code.
 
+#### Factory reset:
+The Adafruit Funhouse comes with an Arduino Self Test example pre-loaded. You can reload it by following the instructions at this link: https://learn.adafruit.com/adafruit-funhouse/factory-reset
+
 ## Operation:
 ### Initialization:
-#### Tests for presence of SGP30 and ignores if not present
+#### On startup, the code tests for an SGP30 board and will bypass all co2 and voc processing if it's not present
 
 ### Calibrate mode:
-#### On start up: hold down sel button to put into calibrate mode
-#### Output sensor values will be raw, not adjusted
-#### SGP30 will not have initialization values loaded. Initialization values will be read and uploaded to IO hourly
+#### If you hold down the select button on start up, the code will enter calibrate mode. In calibrate mode:
+- All sensor values will be raw, not adjusted
+- The software will not read the SGP30 baseline values. This will cause the device to start determining a new baseline. The software will read these values from the SGP30 and upload them to the IO text feed once per hour. At the end of the calibration period, you can update the software with the last values read from the SGP so that they can be restored on initialization. See this link: https://learn.adafruit.com/adafruit-sgp30-gas-tvoc-eco2-mox-sensor/arduino-code#baseline-set-and-get-2980166-20
 
 ### While running:
 
-#### Exceptions should handle network errors
-
-#### Sensor values are printed to the TFT display and posted to IO feeds. The dotstar LEDs are also used for status for a subset of the sensors. System messages are also sent to the text feed
+Sensor values are read, printed to the Funstar TFT display, and posted to IO feeds. The dotstar LEDs are also used for status for a subset of the sensors. System messages are also sent to the text feed.
 
 Sensor| Feed Name | LED | Blue | Green | Red
 ---------|----------|---------|---------|---------|---------
@@ -87,24 +85,29 @@ light level | lightlevel | n/a | n/a | n/a  | n/a | n/a
 cpu temperature | cputemp | n/a | n/a | n/a  | n/a | n/a 
 System messages | text | n/a | n/a  | n/a | n/a 
 
-If in calibrate mode, raw sensor readings are recorded. If not, they're adjusted with a linear regression that was developed offline to calibrate the readings to know references. The linear regression slope and intercept values that used in the source code  will likely require revision for your own sensors. An example regression:
+If in calibrate mode, raw sensor readings are recorded. If not in calibrate, the raw values are adjusted with a linear regression that was developed offline to calibrate the readings to known references. The linear regression slope and intercept values used in the source code  will likely require revision for your specific HW. An example regression:
 
 <img src="./co2-regression.jpg" alt="co2 regression" style="height: 534px; width:1024px;"/>
 
-#### Controls
-Use the slider control to vary brightness. Note: this will not work very well in normal  update mode
+Note that the software should handle the folloing exceptions gracefully:
+- WIFI errors
+- Adafruit IO connection errors
+- Missing SGP30 board
 
-Hold the up button to shift to fast mode:
+#### Controls
+1. Use the slider control to vary brightness. Note: normal update mode reads the slider very slowly.
+
+2. Hold the up button to shift to fast mode:
 - Forces IO update when pressed
 - Sets brightness to 0.25
 - Faster updates
 
-Hold down button to shift to normal mode:
+3. Hold down button to shift to normal mode:
 - Forces an IO update when pressed
 - Sets brightness to zero
 - slower updates
 
-Night light mode:
+4. Night light mode:
 - The PIR motion sensor can trigger the LEDs to act as a night light.
 - Only works if the display brightness is zero.
 - Can be toggled while running with the select switch.
