@@ -22,8 +22,8 @@ Specifications:
                     [x] PIR
                     Adafruit SGP30 Air Quality Sensor Breakout - VOC and eCO2 - STEMMA QT / Qwiic
                         https://www.adafruit.com/product/3709
-                        [] VOC 
-                        [] CO2:
+                        [x] VOC 
+                        [x] CO2:
                 adafruit IO
                     [no] Local Weather and forecast inputs??? use pushbuttons for menu? select local weather? Why?
         Data Outputs:
@@ -35,7 +35,7 @@ Specifications:
                 [x] barometer
                 [x] light level
                     ...                
-                [] change update rate from 20 times / hour??
+                [x] change update rate from 20 times / hour??
                 [x] plot
         Status Outputs:
             Speaker / buzzer ???
@@ -44,7 +44,7 @@ Specifications:
     Processing:
         [no] Use PIR to activate TFT display. Set to off after delay?
         [no] Use light sensor to control TFT brightness
-        [] Decide on power conservation: 
+        [x] Decide on power conservation: 
             two modes? 
             no worries unles battery powered
             Use small power bank like with zoom H6?
@@ -79,16 +79,15 @@ Specifications:
         [x] Add a function for humidity and temperature LEDs
         [] Code clean up
             [x] Consolodate constants
-            [] try except?
+            [x] try except
             test for or protect against non-existent sensors 
-                use constants
                     [x] SGP30
-                    [] PIR
+                    [no] PIR - returns zero if not connected
         [x] standalone test sgp 30
         [x] add sgp 30 CO2 and VOC
             [x] read sensors
             [x] update LED colors based on measurements
-        [] ten hour calibration
+        [x] twelve hour calibration
     Future:
         Modes? 
             [x] nightlight???
@@ -161,7 +160,7 @@ Specifications:
                     PIR
                     temperature
                     TVOC
-            [] Raw sensor readings are adjusted with offset and slope calibration values
+            [x] Raw sensor readings are adjusted with offset and slope calibration values
             [x] slider will control brightness (not very well in low power mode)
             [x] Hold up button to shift to normal mode
                 forces IO update when pressed
@@ -170,9 +169,9 @@ Specifications:
                     defaults to 0.25
                     control with slider
                 60 s IO update
-            [x] Hold down button to shift to low power
+            [x] Hold down button to shift to low power (normal)
                 forces an IO update when pressed
-                2.0 s sleep
+                1.0 s sleep
                 brightness
                     defaults to 0.0
                     slider disables
@@ -203,18 +202,19 @@ Specifications:
     [x] Updating readme
     [x] added generic secrets.py to git
     [x] added a tone to exception processing
+1/24/22
+    [x] test / fix exception handling
+    [x] Format readme
+
 
     [] make PIR motion a boolean?
     [] change barometer to value - rising / falling?
-    [] Access the cpu temp and model a dynamic offset?
-
-    [] Add calvin jpg background?
-    [] Format readme
+    [] Use cpu temp to model a dynamic offset?
     [] decide on file writes. would need for fully auto re-cal w/o internet
             Normally the file system is read only. See this link:
             https://learn.adafruit.com/cpu-temperature-logging-with-circuit-python/writing-to-the-filesystem
             with open("sgp30_cal_data.txt", "a") as f:
                 f.write(co2_base_string)
                 f.write(tvoc_base_string)
-    [] Can LED brightness control be re-factored?
+    [] Can LED brightness control be re-factored in normal mode?
 

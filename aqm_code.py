@@ -151,55 +151,44 @@ def sensor_update(motion_detected, io_update, save_sgp30_cals):
             funhouse.network.enabled = True
             # Connect to WiFi
             funhouse.network.connect()
-        except RuntimeError:
-            funhouse.peripherals.play_tone(1333, 0.25)
-            add_to_io_queue("WiFi error - check secrets file!", True)
-            # Turn off WiFi, but leave red led on to indicate IO error
-            # funhouse.peripherals.led = False
-            funhouse.network.enabled = False
-            return
-        try:
-            # Push to IO using REST
-            funhouse.push_to_io("temperature", temperature_f)
-            funhouse.push_to_io("humidity", rel_humidity)
-            funhouse.push_to_io("pressure", pressure_mb)
-            if SGP30_PRESENT:
-                funhouse.push_to_io("co2", co2)
-                funhouse.push_to_io("voc", voc)
-                if save_sgp30_cals:
-                    co2_base = sgp30.baseline_eCO2
-                    tvoc_base = sgp30.baseline_TVOC
-                    co2_base_string = "co2eq_base: " + str(co2_base)
-                    funhouse.push_to_io("text", co2_base_string)
-                    print(co2_base_string)
-                    tvoc_base_string = "tvoc_base: " + str(tvoc_base)
-                    funhouse.push_to_io("text", tvoc_base_string)
-                    print(tvoc_base_string)
-            else:
-                funhouse.push_to_io("co2", 0)
-                funhouse.push_to_io("voc", 0)
-            funhouse.push_to_io("pir", motion_detected)
-            funhouse.push_to_io("lightlevel", funhouse.peripherals.light)
-            funhouse.push_to_io("cputemp", cpu_temp_f)
-            # push io_queue to text IO feed then clear it
-            if io_queue != "":
-                print("IO text: \n" + io_queue)
-                try:
+            try:
+                # Push to IO using REST
+                funhouse.push_to_io("temperature", temperature_f)
+                funhouse.push_to_io("humidity", rel_humidity)
+                funhouse.push_to_io("pressure", pressure_mb)
+                if SGP30_PRESENT:
+                    funhouse.push_to_io("co2", co2)
+                    funhouse.push_to_io("voc", voc)
+                    if save_sgp30_cals:
+                        co2_base = sgp30.baseline_eCO2
+                        tvoc_base = sgp30.baseline_TVOC
+                        co2_base_string = "co2eq_base: " + str(co2_base)
+                        funhouse.push_to_io("text", co2_base_string)
+                        print(co2_base_string)
+                        tvoc_base_string = "tvoc_base: " + str(tvoc_base)
+                        funhouse.push_to_io("text", tvoc_base_string)
+                        print(tvoc_base_string)
+                else:
+                    funhouse.push_to_io("co2", 0)
+                    funhouse.push_to_io("voc", 0)
+                funhouse.push_to_io("pir", motion_detected)
+                funhouse.push_to_io("lightlevel", funhouse.peripherals.light)
+                funhouse.push_to_io("cputemp", cpu_temp_f)
+                # push io_queue to text IO feed then clear it
+                if io_queue != "":
                     funhouse.push_to_io("text", io_queue)
-                except RuntimeError:
-                    funhouse.peripherals.play_tone(1666, 0.25)
-                    print("Error pushing IO text")
-                io_queue = ""
-        except RuntimeError:
-            funhouse.peripherals.play_tone(2000, 0.25)
-            add_to_io_queue("IO connect error - check secrets file!", True)
-            # Turn off WiFi, but leave red led on to indicate IO error
-            # funhouse.peripherals.led = False
-            funhouse.network.enabled = False
-            return
-        # Turn off WiFi
+                    io_queue = ""
+                print("Push to IO complete")
+            except Exception as e:
+                funhouse.peripherals.play_tone(1500, 0.25)
+                print(str(e) + "\nAdafruit IO error - check secrets file!")
+        except ConnectionError as e:
+            funhouse.peripherals.play_tone(1500, 0.25)
+            print(str(e) + "\nWiFi error - check secrets file!")
+        if io_queue != "":
+            print("IO text push fail? Was: \n" + io_queue)
+            io_queue = ""
         funhouse.network.enabled = False
-        print("Push to IO complete")
 
 io_queue = ""
 def add_to_io_queue(message, print_it_too):
@@ -238,9 +227,9 @@ try:
         sgp30.set_iaq_baseline(0x9872, 0x98D7)
         add_to_io_queue("SGP30 - initialized.", True)
     SGP30_PRESENT = True
-except RuntimeError:
+except ValueError as e:
     funhouse.peripherals.play_tone(1000, 0.25)
-    add_to_io_queue("SGP30 initializing error: do not use.", True)
+    add_to_io_queue(str(e) + "\nSGP30 initialize error: Mark offline.", True)
     SGP30_PRESENT = False
 
 # Turn things off
