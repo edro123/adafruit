@@ -1,4 +1,4 @@
-# pylint: disable=missing-function-docstring, invalid-name, global-statement
+# pylint: disable=invalid-name
 """
 This code was intiially based on an adafruit example:
 https://learn.adafruit.com/creating-funhouse-projects-with-circuitpython/temperature-logger-example
@@ -101,11 +101,10 @@ def set_dotstar(parameter, measurement):
             # GREEN
             funhouse.peripherals.dotstars[4] = (0, led_bright, 0)
     else:
-        add_to_io_queue("set_dotstar parameter mismatch", True)
+        text_queue.add("set_dotstar parameter mismatch")
 
 
 def sensor_update(motion_detected, io_update, save_sgp30_cals):
-    global io_queue
     print("---------------------")
 
     if SGP30_PRESENT:
@@ -160,50 +159,53 @@ def sensor_update(motion_detected, io_update, save_sgp30_cals):
                     funhouse.push_to_io("co2", co2)
                     funhouse.push_to_io("voc", voc)
                     if save_sgp30_cals:
-                        co2_base = sgp30.baseline_eCO2
-                        tvoc_base = sgp30.baseline_TVOC
-                        co2_base_string = "co2eq_base: " + str(co2_base)
-                        funhouse.push_to_io("text", co2_base_string)
-                        print(co2_base_string)
-                        tvoc_base_string = "tvoc_base: " + str(tvoc_base)
-                        funhouse.push_to_io("text", tvoc_base_string)
-                        print(tvoc_base_string)
+                        text_queue.add("co2eq_base: " + str(sgp30.baseline_eCO2))
+                        text_queue.add("tvoc_base: " + str(sgp30.baseline_TVOC))
                 else:
                     funhouse.push_to_io("co2", 0)
                     funhouse.push_to_io("voc", 0)
                 funhouse.push_to_io("pir", motion_detected)
                 funhouse.push_to_io("lightlevel", funhouse.peripherals.light)
                 funhouse.push_to_io("cputemp", cpu_temp_f)
-                # push io_queue to text IO feed then clear it
-                if io_queue != "":
-                    funhouse.push_to_io("text", io_queue)
-                    io_queue = ""
+                # push text_queue to text IO feed then clear it if successfull
+                if text_queue.queue() != "":
+                    funhouse.push_to_io("text", text_queue.queue())
+                    # If successfull, clear the queue . If not, don't and try to send next time
+                    text_queue.clear()
                 print("Push to IO complete")
             except Exception as e:
                 funhouse.peripherals.play_tone(1500, 0.25)
-                print(str(e) + "\nAdafruit IO error - check secrets file!")
-        except ConnectionError as e:
+                text_queue.add(str(e) + "\nAdafruit IO error - check secrets file!")
+        except Exception as e:
             funhouse.peripherals.play_tone(1500, 0.25)
-            print(str(e) + "\nWiFi error - check secrets file!")
-        if io_queue != "":
-            print("IO text push fail? Was: \n" + io_queue)
-            io_queue = ""
+            text_queue.add(str(e) + "\nWiFi error - check secrets file!")
         funhouse.network.enabled = False
 
-io_queue = ""
-def add_to_io_queue(message, print_it_too):
-    global io_queue
-    # if io_queue is not empty: add a new line
-    io_queue = message if io_queue == "" else io_queue + "\n" + message
-    if print_it_too:
-        print(message)
 
+class adafruit_io_text_queue:
+    def __init__(self):
+        self.count = 0
+        self.text_queue = ""
+
+    def add(self, message):
+        print(message)
+        self.count += 1
+        # number each message so we can see if any are missing
+        self.text_queue = self.text_queue + str(self.count) + ": " + str(message) + "\n"
+
+    def queue(self):
+        return self.text_queue
+
+    def clear(self):
+        self.text_queue = ""
+
+text_queue = adafruit_io_text_queue()
 
 funhouse = FunHouse(default_bg=None)
 # If the select button is pressed on start up, enter calibration mode and use raw sensor values
 if funhouse.peripherals.button_sel:
     CALIBRATE = True
-    add_to_io_queue("Select pressed on startup - calibration mode.", True)
+    text_queue.add("Select pressed on startup - calibration mode.")
 else:
     CALIBRATE = False
 
@@ -213,23 +215,22 @@ else:
 try:
     i2c = board.I2C()
     sgp30 = adafruit_sgp30.Adafruit_SGP30(i2c)
-    serial_number = "SGP30 serial #:" + str([hex(i) for i in sgp30.serial])
-    add_to_io_queue(serial_number, True)
+    text_queue.add("SGP30 serial #:" + str([hex(i) for i in sgp30.serial]))
     sgp30.iaq_init()
 
     if CALIBRATE:
-        add_to_io_queue("SGP30 - calibration mode.", True)
+        text_queue.add("SGP30 - calibration mode.")
     else:
         # load baseline calibration data (eCO2, TVOC)
         # factory numbers: sgp30.set_iaq_baseline(0x8973, 0x8AAE)
         # 1/10/22 indoor / outdoor: sgp30.set_iaq_baseline(0x8DFC, 0x91EE)
         # 1/11/22 outdoor:
         sgp30.set_iaq_baseline(0x9872, 0x98D7)
-        add_to_io_queue("SGP30 - initialized.", True)
+        text_queue.add("SGP30 initialized.")
     SGP30_PRESENT = True
 except ValueError as e:
     funhouse.peripherals.play_tone(1000, 0.25)
-    add_to_io_queue(str(e) + "\nSGP30 initialize error: Mark offline.", True)
+    text_queue.add(str(e) + "\nSGP30 initialize error: Mark offline.")
     SGP30_PRESENT = False
 
 # Turn things off
@@ -246,7 +247,7 @@ io_update_time = time.time() - io_update_interval
 sgp30_cal_data_save_time = time.time() - SGP30_CAL_DATA_SAVE_INTERVAL
 
 pir_motion_detected = 0
-add_to_io_queue("Funhouse start up complete", True)
+text_queue.add("Funhouse start up complete")
 while True:
     # Monitor motion detection every loop
     if pir_motion_detected == 0 and funhouse.peripherals.pir_sensor:
@@ -284,15 +285,15 @@ while True:
         io_update_interval = FAST_IO_UPDATE_INTERVAL
         sleep_interval = FAST_SLEEP_INTERVAL
         funhouse.display.brightness = 0.25
-        add_to_io_queue("Switch to fast updates", True)
-        sensor_update(pir_motion_detected, False, False)
+        text_queue.add("Switch to fast updates")
+        sensor_update(pir_motion_detected, True, False)
         io_update_time = time.time()
     elif funhouse.peripherals.button_down:
         # set to normal mode
         io_update_interval = NORMAL_IO_UPDATE_INTERVAL
         sleep_interval = NORMAL_SLEEP_INTERVAL
         funhouse.display.brightness = 0
-        add_to_io_queue("Switch to normal updates", True)
+        text_queue.add("Switch to normal updates")
         sensor_update(pir_motion_detected, True, False)
         io_update_time = time.time()
     elif funhouse.peripherals.button_sel:

@@ -205,16 +205,20 @@ Specifications:
 1/24/22
     [x] test / fix exception handling
     [x] Format readme
+1/25/22
+    [x] refactor io_queue - text_queue
+        function -> class
+        number messages so we know if any are missing
+    [x] readme fixes
+    [NO] Use cpu temp to model a dynamic offset?
 
 
-    [] make PIR motion a boolean?
     [] change barometer to value - rising / falling?
-    [] Use cpu temp to model a dynamic offset?
     [] decide on file writes. would need for fully auto re-cal w/o internet
             Normally the file system is read only. See this link:
             https://learn.adafruit.com/cpu-temperature-logging-with-circuit-python/writing-to-the-filesystem
             with open("sgp30_cal_data.txt", "a") as f:
                 f.write(co2_base_string)
                 f.write(tvoc_base_string)
-    [] Can LED brightness control be re-factored in normal mode?
+    [] Can LED brightness control be re-factored in normal mode to make smoother?
 
