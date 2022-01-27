@@ -216,6 +216,7 @@ Specifications:
     [x] check for presense of secrets file at startup. if missing, stop
     [x] add funhouse id to secrets file so multiple funhouse's can share a single io_queue
     [x] Freeze io_queue if size is > 2048 
+# Version 0.1: 1/27/22
 
 
     [] change barometer to value - rising / falling?

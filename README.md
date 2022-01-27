@@ -1,5 +1,7 @@
 # Adafruit Funhouse Air Quality Monitor
 
+# Version 0.1: 1/27/22
+
 <img src="./funhouse-aqm.jpg" alt="Funhouse AQM" style="height: 534px; width:1024px;"/>
 
 This Air Quality Monitor is built using the Adafruit Funhouse microcontroller, an add on PIR sensor, and an SGP30 carbon dioxide / VOC sensor. The code reads each of the sensors, adjusts them with predetermined calibration constants, prints the values to the Funhouse display, uploads them to Adafruit IO, and uses the dotstars to indicate status
@@ -116,7 +118,7 @@ Note that the software should handle the following exceptions gracefully:
 The Funhouse red led is on when code is running, off while sleeping
 
 ## Version:
-0.1 - released 1/31/22
+0.1 - released 1/27/22
 
 ## Author: 
 Ed Rosack - (https://github.com/edro123/)

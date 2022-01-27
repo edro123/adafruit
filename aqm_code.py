@@ -3,13 +3,13 @@
 This code was intiially based on an adafruit example:
 https://learn.adafruit.com/creating-funhouse-projects-with-circuitpython/temperature-logger-example
 """
+VERSION = "aqm_code.py version 0.1, 1-27-22"
 
 import time
 # Make sure secrets.py exists and get this device's ID
 try:
     from secrets import secrets
     FUNHOUSE_ID = secrets["funhouse_id"]
-    print("This is Funhouse " + FUNHOUSE_ID)
 except ImportError:
     print("Missing or invalid secrets.py - please correct!")
     raise
@@ -264,6 +264,9 @@ sgp30_cal_data_save_time = time.time() - SGP30_CAL_DATA_SAVE_INTERVAL
 
 pir_motion_detected = 0
 text_queue.add("Start up complete")
+text_queue.add("Running software: " + VERSION)
+text_queue.add("On Funhouse ID: " + FUNHOUSE_ID)
+
 while True:
     # Monitor motion detection every loop
     if pir_motion_detected == 0 and funhouse.peripherals.pir_sensor:
