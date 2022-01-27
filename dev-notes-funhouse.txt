@@ -211,14 +211,18 @@ Specifications:
         number messages so we know if any are missing
     [x] readme fixes
     [NO] Use cpu temp to model a dynamic offset?
+1/27/22
+    [x] slider control logic changed: only processes changes. more responsive?
+    [x] check for presense of secrets file at startup. if missing, stop
+    [x] add funhouse id to secrets file so multiple funhouse's can share a single io_queue
+    [x] Freeze io_queue if size is > 2048 
 
 
     [] change barometer to value - rising / falling?
     [] decide on file writes. would need for fully auto re-cal w/o internet
-            Normally the file system is read only. See this link:
-            https://learn.adafruit.com/cpu-temperature-logging-with-circuit-python/writing-to-the-filesystem
-            with open("sgp30_cal_data.txt", "a") as f:
-                f.write(co2_base_string)
-                f.write(tvoc_base_string)
-    [] Can LED brightness control be re-factored in normal mode to make smoother?
+        Normally the file system is read only. See this link:
+        https://learn.adafruit.com/cpu-temperature-logging-with-circuit-python/writing-to-the-filesystem
+        with open("sgp30_cal_data.txt", "a") as f:
+            f.write(co2_base_string)
+            f.write(tvoc_base_string)
 

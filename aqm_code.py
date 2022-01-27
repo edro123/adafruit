@@ -5,7 +5,15 @@ https://learn.adafruit.com/creating-funhouse-projects-with-circuitpython/tempera
 """
 
 import time
-# from urllib.request import CacheFTPHandler
+# Make sure secrets.py exists and get this device's ID
+try:
+    from secrets import secrets
+    FUNHOUSE_ID = secrets["funhouse_id"]
+    print("This is Funhouse " + FUNHOUSE_ID)
+except ImportError:
+    print("Missing or invalid secrets.py - please correct!")
+    raise
+
 from adafruit_funhouse import FunHouse
 import board
 import adafruit_sgp30
@@ -169,7 +177,7 @@ def sensor_update(motion_detected, io_update, save_sgp30_cals):
                 funhouse.push_to_io("cputemp", cpu_temp_f)
                 # push text_queue to text IO feed then clear it if successfull
                 if text_queue.queue() != "":
-                    funhouse.push_to_io("text", text_queue.queue())
+                    funhouse.push_to_io("text", str(FUNHOUSE_ID) + text_queue.queue())
                     # If successfull, clear the queue . If not, don't and try to send next time
                     text_queue.clear()
                 print("Push to IO complete")
@@ -187,17 +195,25 @@ class adafruit_io_text_queue:
         self.count = 0
         self.text_queue = ""
 
+
     def add(self, message):
         print(message)
-        self.count += 1
-        # number each message so we can see if any are missing
-        self.text_queue = self.text_queue + str(self.count) + ": " + str(message) + "\n"
+        if len(self.text_queue) > 2047:
+            # the text_queue is cleared when pushed to the io text feed
+            # if it's grown this large, there must be a (repeating) problem
+            # don't add, but keep the current text and hope it will eventually upload
+            print("io text queue size limit reached - frozen!")
+        else:
+            self.count += 1
+            # number each message so we can see if any are missing
+            self.text_queue = self.text_queue + str(self.count) + ": " + str(message) + "\n"
 
     def queue(self):
         return self.text_queue
 
     def clear(self):
         self.text_queue = ""
+
 
 text_queue = adafruit_io_text_queue()
 
@@ -247,7 +263,7 @@ io_update_time = time.time() - io_update_interval
 sgp30_cal_data_save_time = time.time() - SGP30_CAL_DATA_SAVE_INTERVAL
 
 pir_motion_detected = 0
-text_queue.add("Funhouse start up complete")
+text_queue.add("Start up complete")
 while True:
     # Monitor motion detection every loop
     if pir_motion_detected == 0 and funhouse.peripherals.pir_sensor:
@@ -275,11 +291,11 @@ while True:
 
     # set TFT display and LED brightness with slider value
     slider = funhouse.peripherals.slider
-    if slider is not None:
+    if slider is not None and slider != funhouse.display.brightness:
         funhouse.display.brightness = slider
         print("Slider changed to " + str(funhouse.display.brightness))
         sensor_update(pir_motion_detected, False, False)
-
+    # set update rates with up and down buttons
     if funhouse.peripherals.button_up:
         # set to fast mode
         io_update_interval = FAST_IO_UPDATE_INTERVAL
@@ -296,6 +312,7 @@ while True:
         text_queue.add("Switch to normal updates")
         sensor_update(pir_motion_detected, True, False)
         io_update_time = time.time()
+    # Turn night light mode on / off with select button
     elif funhouse.peripherals.button_sel:
         # Toggle nightlight mode (dark_limit)
         if dark_limit == DARK_THRESHOLD:
